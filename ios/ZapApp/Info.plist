@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist for ZapApp
+
+  Required keys to add in Xcode target settings or here:
+
+  NSBluetoothAlwaysUsageDescription
+    → "ZapApp はバックグラウンドで Pavlok デバイスに接続し、Zap を送信するために Bluetooth を使用します。"
+
+  NSBluetoothPeripheralUsageDescription  (iOS 12 以下のフォールバック)
+    → "ZapApp は Pavlok デバイスへの接続に Bluetooth を使用します。"
+
+  UIBackgroundModes
+    → bluetooth-central  (バックグラウンド BLE スキャン・接続を許可)
+    → fetch              (バックグラウンドポーリング)
+
+  FirebaseAppDelegateProxyEnabled → NO  (必要に応じて)
+
+  ※ Xcode の Target > Info タブから同等の設定を追加することを推奨します。
+    このファイルはプレースホルダーです。Xcodeプロジェクト生成時に
+    実際の Info.plist と統合してください。
+-->
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- Bluetooth 使用許可説明 -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>ZapApp はバックグラウンドで Pavlok デバイスに接続し、Zap を送信するために Bluetooth を使用します。</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>ZapApp は Pavlok デバイスへの接続に Bluetooth を使用します。</string>
+
+    <!-- バックグラウンドモード -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Firebase の自動 Swizzling を無効化（AppDelegate で手動ハンドリングするため） -->
+    <key>FirebaseAppDelegateProxyEnabled</key>
+    <false/>
+
+    <!-- App Transport Security: localhost への HTTP 通信を許可 -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>localhost</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+</dict>
+</plist>

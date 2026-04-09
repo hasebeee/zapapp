@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"router.get\\\\|router.post\\\\|router.delete\" /c/Users/haseb/projects/zapapp/backend/src/routes/*.ts)"
+    ]
+  }
+}
