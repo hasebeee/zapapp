@@ -14,7 +14,7 @@ async function main(): Promise<void> {
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
-    const schema = fs.readFileSync(path.join(__dirname, '../src/db/schema.sql'), 'utf8');
+    const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
     await client.query(schema);
     client.release();
     console.log('Database connected and schema applied successfully');
