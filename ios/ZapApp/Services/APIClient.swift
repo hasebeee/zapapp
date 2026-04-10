@@ -10,7 +10,7 @@ final class APIClient {
     // MARK: - Constants
 
     /// バックエンドのベース URL（後で変更可能な定数）
-    static let baseURLString = "http://localhost:3000"
+    static let baseURLString = "https://zapapp-iszt.onrender.com"
 
     static let shared = APIClient()
 
