@@ -23,7 +23,7 @@ enum TaskStatus: String, Codable, CaseIterable {
 
 // MARK: - AppTask
 
-struct AppTask: Codable, Identifiable {
+struct AppTask: Codable, Identifiable ,Hashable{
     let id: String
     let ownerUserId: String
     let title: String

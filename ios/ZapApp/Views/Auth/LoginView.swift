@@ -73,7 +73,7 @@ struct LoginView: View {
                 Button("アカウントを作成") {
                     showSignUp = true
                 }
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
 
                 Spacer()
             }

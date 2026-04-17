@@ -16,7 +16,7 @@ struct AcceptInviteView: View {
                 // アイコン
                 Image(systemName: "link.badge.plus")
                     .font(.system(size: 72))
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(Color.accentColor)
 
                 // 説明
                 VStack(spacing: 8) {
