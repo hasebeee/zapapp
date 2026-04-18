@@ -106,13 +106,6 @@ router.post('/accept', async (req: AuthRequest, res: Response): Promise<void> =>
       return;
     }
 
-    // inviteeEmailとログインユーザーのemailが一致するか確認
-    if (invite.invitee_email.toLowerCase() !== email.toLowerCase()) {
-      await client.query('ROLLBACK');
-      res.status(403).json({ error: 'This invite was not sent to your email address' });
-      return;
-    }
-
     // relationships作成
     const relResult = await client.query<RelationshipRow>(
       `INSERT INTO relationships (id, owner_user_id, controller_user_id, status, created_at)
