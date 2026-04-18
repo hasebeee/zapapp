@@ -1,6 +1,6 @@
 import Foundation
 
-struct Relationship: Codable, Identifiable {
+struct Relationship: Codable, Identifiable, Hashable {
     let id: String
     let ownerUserId: String
     let controllerUserId: String
@@ -19,7 +19,7 @@ struct Relationship: Codable, Identifiable {
     }
 }
 
-struct RelationshipUser: Codable, Identifiable {
+struct RelationshipUser: Codable, Identifiable, Hashable {
     let id: String
     let email: String
     let displayName: String?
