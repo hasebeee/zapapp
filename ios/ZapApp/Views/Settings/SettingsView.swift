@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
 
     @State private var showLogoutConfirm = false
+    @State private var showInvite = false
 
     var body: some View {
         NavigationStack {
@@ -29,6 +30,21 @@ struct SettingsView: View {
                     Text("アカウント")
                 }
 
+                // 招待管理
+                Section {
+                    Button {
+                        showInvite = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "person.badge.plus")
+                            Text("招待管理")
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                } header: {
+                    Text("つながり")
+                }
+
                 // ログアウト
                 Section {
                     Button(role: .destructive) {
@@ -40,6 +56,9 @@ struct SettingsView: View {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: $showInvite) {
+                InviteView()
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)
