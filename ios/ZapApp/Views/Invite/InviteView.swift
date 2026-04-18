@@ -172,7 +172,16 @@ struct InviteRowView: View {
                     Text(invite.token)
                         .font(.caption.monospaced())
                         .foregroundStyle(.primary)
-                        .textSelection(.enabled)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button {
+                        UIPasteboard.general.string = invite.token
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.borderless)
                 }
             }
         }
