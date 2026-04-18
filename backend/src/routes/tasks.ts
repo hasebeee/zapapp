@@ -42,7 +42,54 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       [userId, controller_user_id ?? null, title, due_at]
     );
 
-    res.status(201).json(result.rows[0]);
+    const task = result.rows[0];
+
+    res.status(201).json(task);
+
+    // Controllerへプッシュ通知（レスポンス後に非同期で送信）
+    if (controller_user_id) {
+      try {
+        // Ownerの表示名を取得
+        const ownerResult = await pool.query<{ display_name: string }>(
+          `SELECT display_name FROM users WHERE id = $1`,
+          [userId]
+        );
+        const ownerName = ownerResult.rows[0]?.display_name || 'オーナー';
+
+        // Controllerのデバイス一覧を取得
+        const devicesResult = await pool.query<DeviceRow>(
+          `SELECT * FROM devices WHERE user_id = $1`,
+          [controller_user_id]
+        );
+
+        const pushPromises = devicesResult.rows.map((device) =>
+          admin.messaging().send({
+            token: device.push_token,
+            notification: {
+              title: '新しいタスクが作成されました',
+              body: `${ownerName}さんが「${task.title}」を追加しました`,
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1,
+                },
+                taskId: task.id,
+                type: 'task_created',
+              },
+            },
+          }).catch((pushErr) => {
+            console.error(`Push failed for device ${device.id}:`, pushErr);
+          })
+        );
+
+        await Promise.all(pushPromises);
+        console.log(`[tasks] Notified controller ${controller_user_id} about new task ${task.id}`);
+      } catch (pushErr) {
+        console.error('[tasks] Push notification error:', pushErr);
+      }
+    }
   } catch (err) {
     console.error('POST /tasks error:', err);
     res.status(500).json({ error: 'Internal server error' });
