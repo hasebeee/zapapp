@@ -30,11 +30,11 @@ router.get('/:ownerUserId/tasks', async (req: AuthRequest, res: Response): Promi
 
     if (statusQuery) {
       const statuses = statusQuery.split(',').map((s) => s.trim());
-      query = `SELECT * FROM tasks WHERE owner_user_id = $1 AND status = ANY($2) ORDER BY created_at DESC`;
-      params = [ownerUserId, statuses];
+      query = `SELECT * FROM tasks WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = ANY($3) ORDER BY created_at DESC`;
+      params = [ownerUserId, controllerUserId, statuses];
     } else {
-      query = `SELECT * FROM tasks WHERE owner_user_id = $1 ORDER BY created_at DESC`;
-      params = [ownerUserId];
+      query = `SELECT * FROM tasks WHERE owner_user_id = $1 AND controller_user_id = $2 ORDER BY created_at DESC`;
+      params = [ownerUserId, controllerUserId];
     }
 
     const result = await pool.query<TaskRow>(query, params);

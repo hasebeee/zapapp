@@ -73,8 +73,11 @@ CREATE TABLE IF NOT EXISTS tasks (
   status          TEXT NOT NULL CHECK (status IN ('scheduled', 'readyToZap', 'waitingAck', 'readyToReZap', 'closed')) DEFAULT 'scheduled'
 );
 
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS controller_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
+
 CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_controller ON tasks(controller_user_id);
 
 -- ──────────────────────────────────────────────
 -- zap_requests

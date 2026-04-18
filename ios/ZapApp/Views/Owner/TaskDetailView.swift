@@ -276,6 +276,7 @@ struct InfoRow: View {
         TaskDetailView(task: AppTask(
             id: "1",
             ownerUserId: "u1",
+            controllerUserId: nil,
             title: "サンプルタスク",
             dueAt: .now.addingTimeInterval(3600),
             createdAt: .now,

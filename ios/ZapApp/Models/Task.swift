@@ -23,9 +23,10 @@ enum TaskStatus: String, Codable, CaseIterable {
 
 // MARK: - AppTask
 
-struct AppTask: Codable, Identifiable ,Hashable{
+struct AppTask: Codable, Identifiable, Hashable {
     let id: String
     let ownerUserId: String
+    let controllerUserId: String?
     let title: String
     let dueAt: Date
     let createdAt: Date
@@ -34,11 +35,12 @@ struct AppTask: Codable, Identifiable ,Hashable{
 
     enum CodingKeys: String, CodingKey {
         case id
-        case ownerUserId  = "owner_user_id"
+        case ownerUserId      = "owner_user_id"
+        case controllerUserId = "controller_user_id"
         case title
-        case dueAt        = "due_at"
-        case createdAt    = "created_at"
-        case closedAt     = "closed_at"
+        case dueAt            = "due_at"
+        case createdAt        = "created_at"
+        case closedAt         = "closed_at"
         case status
     }
 }

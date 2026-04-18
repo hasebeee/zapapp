@@ -5,7 +5,10 @@ struct CreateTaskView: View {
 
     @State private var title: String = ""
     @State private var dueAt: Date = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
+    @State private var selectedRelationship: Relationship? = nil
+    @State private var relationships: [Relationship] = []
     @State private var isLoading: Bool = false
+    @State private var isLoadingRelationships: Bool = false
     @State private var errorMessage: String? = nil
 
     private var isFormValid: Bool {
@@ -23,6 +26,28 @@ struct CreateTaskView: View {
                                selection: $dueAt,
                                in: Date.now...,
                                displayedComponents: [.date, .hourAndMinute])
+                }
+
+                Section("監視してもらう人") {
+                    if isLoadingRelationships {
+                        HStack {
+                            ProgressView()
+                            Text("読み込み中...")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if relationships.isEmpty {
+                        Text("まだ関係者がいません")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Picker("監視者", selection: $selectedRelationship) {
+                            Text("選択しない").tag(Optional<Relationship>.none)
+                            ForEach(relationships) { rel in
+                                Text(rel.controllerUser?.displayName ?? rel.controllerUser?.email ?? rel.controllerUserId)
+                                    .tag(Optional(rel))
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
                 }
 
                 if let errorMessage {
@@ -54,10 +79,23 @@ struct CreateTaskView: View {
                     }
                 }
             }
+            .task {
+                await loadRelationships()
+            }
         }
     }
 
     // MARK: - Actions
+
+    private func loadRelationships() async {
+        isLoadingRelationships = true
+        defer { isLoadingRelationships = false }
+        do {
+            relationships = try await APIClient.shared.getRelationships()
+        } catch {
+            // 取得失敗は無視（監視者なしで作成可能）
+        }
+    }
 
     private func createTask() async {
         isLoading = true
@@ -67,7 +105,8 @@ struct CreateTaskView: View {
         do {
             _ = try await APIClient.shared.createTask(
                 title: title.trimmingCharacters(in: .whitespaces),
-                dueAt: dueAt
+                dueAt: dueAt,
+                controllerUserId: selectedRelationship?.controllerUserId
             )
             dismiss()
         } catch {

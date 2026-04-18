@@ -10,7 +10,11 @@ const router = Router();
 // ──────────────────────────────────────────────
 router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
-  const { title, due_at } = req.body as { title?: string; due_at?: string };
+  const { title, due_at, controller_user_id } = req.body as {
+    title?: string;
+    due_at?: string;
+    controller_user_id?: string;
+  };
 
   if (!title || !due_at) {
     res.status(400).json({ error: 'title and due_at are required' });
@@ -18,11 +22,24 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   }
 
   try {
+    // controller_user_id が指定された場合はアクティブな関係か確認
+    if (controller_user_id) {
+      const relResult = await pool.query(
+        `SELECT id FROM relationships
+         WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
+        [userId, controller_user_id]
+      );
+      if (relResult.rows.length === 0) {
+        res.status(403).json({ error: 'No active relationship with this controller' });
+        return;
+      }
+    }
+
     const result = await pool.query<TaskRow>(
-      `INSERT INTO tasks (id, owner_user_id, title, due_at, created_at, status)
-       VALUES (uuid_generate_v4(), $1, $2, $3, NOW(), 'scheduled')
+      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, due_at, created_at, status)
+       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), 'scheduled')
        RETURNING *`,
-      [userId, title, due_at]
+      [userId, controller_user_id ?? null, title, due_at]
     );
 
     res.status(201).json(result.rows[0]);
@@ -183,6 +200,13 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
     if (relResult.rows.length === 0) {
       await client.query('ROLLBACK');
       res.status(403).json({ error: 'No active relationship' });
+      return;
+    }
+
+    // 指定されたControllerのみZap可能
+    if (task.controller_user_id && task.controller_user_id !== controllerUserId) {
+      await client.query('ROLLBACK');
+      res.status(403).json({ error: 'You are not the assigned controller for this task' });
       return;
     }
 

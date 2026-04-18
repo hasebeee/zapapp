@@ -67,6 +67,7 @@ export type TaskStatus =
 export interface TaskRow {
   id: string;
   owner_user_id: string;
+  controller_user_id: string | null;
   title: string;
   due_at: Date;
   created_at: Date;
