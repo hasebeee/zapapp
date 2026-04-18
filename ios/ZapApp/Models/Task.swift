@@ -4,9 +4,9 @@ import Foundation
 
 enum TaskStatus: String, Codable, CaseIterable {
     case scheduled
-    case readyToZap   = "ready_to_zap"
-    case waitingAck   = "waiting_ack"
-    case readyToReZap = "ready_to_re_zap"
+    case readyToZap
+    case waitingAck
+    case readyToReZap
     case closed
 
     /// 表示用ラベル
