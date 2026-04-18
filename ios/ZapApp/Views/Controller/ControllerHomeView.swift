@@ -112,7 +112,7 @@ struct RelationshipRowView: View {
         HStack(spacing: 12) {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 44))
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(displayName)
