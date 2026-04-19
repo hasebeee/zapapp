@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CreateTaskView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
 
     @State private var title: String = ""
     @State private var dueAt: Date = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
@@ -41,7 +42,7 @@ struct CreateTaskView: View {
                     } else {
                         Picker("監視者", selection: $selectedRelationship) {
                             Text("選択しない").tag(Optional<Relationship>.none)
-                            ForEach(relationships) { rel in
+                            ForEach(relationships.filter { $0.ownerUserId == appState.uid }) { rel in
                                 Text(rel.controllerUser?.displayName ?? rel.controllerUser?.email ?? rel.controllerUserId)
                                     .tag(Optional(rel))
                             }
