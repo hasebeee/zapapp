@@ -13,7 +13,7 @@ enum TaskStatus: String, Codable, CaseIterable {
     var label: String {
         switch self {
         case .scheduled:    return "スケジュール済み"
-        case .readyToZap:   return "Zap 可能"
+        case .readyToZap:   return "判定待ち"
         case .waitingAck:   return "受領待ち"
         case .readyToReZap: return "再 Zap 可能"
         case .closed:       return "完了"
