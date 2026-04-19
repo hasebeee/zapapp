@@ -71,7 +71,7 @@ struct ControllerHomeView: View {
                 )
             } label: {
                 RelationshipRowView(relationship: relationship,
-                                    myUserId: appState.uid ?? "")
+                                    myUserId: appState.dbUserId ?? "")
             }
         }
         .listStyle(.insetGrouped)
@@ -79,7 +79,7 @@ struct ControllerHomeView: View {
 
     /// 自分が Controller 側のリレーションシップのみ抽出
     private var ownerRelationships: [Relationship] {
-        relationships.filter { $0.controllerUserId == appState.uid }
+        relationships.filter { $0.controllerUserId == appState.dbUserId }
     }
 
     private func ownerDisplayName(for relationship: Relationship) -> String {

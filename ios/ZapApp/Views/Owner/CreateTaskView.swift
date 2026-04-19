@@ -42,7 +42,7 @@ struct CreateTaskView: View {
                     } else {
                         Picker("監視者", selection: $selectedRelationship) {
                             Text("選択しない").tag(Optional<Relationship>.none)
-                            ForEach(relationships.filter { $0.ownerUserId == appState.uid }) { rel in
+                            ForEach(relationships.filter { $0.ownerUserId == appState.dbUserId }) { rel in
                                 Text(rel.controllerUser?.displayName ?? rel.controllerUser?.email ?? rel.controllerUserId)
                                     .tag(Optional(rel))
                             }

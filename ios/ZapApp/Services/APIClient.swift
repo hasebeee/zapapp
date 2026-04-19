@@ -125,6 +125,13 @@ final class APIClient {
         try await performVoid(req, body: ["push_token": pushToken])
     }
 
+    // MARK: - Me APIs
+
+    func getMyProfile() async throws -> AppUser {
+        let req = try await authorizedRequest(path: "/me/profile")
+        return try await perform(req)
+    }
+
     // MARK: - Invite APIs
 
     func createInvite(inviteeEmail: String) async throws -> InviteResponse {

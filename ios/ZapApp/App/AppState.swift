@@ -24,6 +24,9 @@ final class AppState: ObservableObject {
         currentUser?.uid
     }
 
+    /// DB上のPostgreSQL UUID
+    @Published var dbUserId: String? = nil
+
     // MARK: - Private
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -36,6 +39,14 @@ final class AppState: ObservableObject {
             Task { @MainActor in
                 self?.currentUser = user
                 self?.isLoggedIn = user != nil
+                if user != nil {
+                    // DBのUUIDを取得
+                    if let profile = try? await APIClient.shared.getMyProfile() {
+                        self?.dbUserId = profile.id
+                    }
+                } else {
+                    self?.dbUserId = nil
+                }
             }
         }
     }
