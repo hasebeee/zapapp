@@ -22,7 +22,7 @@ final class PavlokService: NSObject, ObservableObject {
 
     @Published var connectionState: ConnectionState = .disconnected
     @Published var lastError: String? = nil
-    @Published var discoveredPeripherals: [(id: String, name: String)] = []
+    @Published var discoveredPeripherals: [DiscoveredPeripheral] = []
 
     // MARK: - Private
 
@@ -200,7 +200,7 @@ extension PavlokService: CBCentralManagerDelegate {
                 let id = peripheral.identifier.uuidString
                 let name = peripheral.name ?? "Pavlok"
                 if !self.discoveredPeripherals.contains(where: { $0.id == id }) {
-                    self.discoveredPeripherals.append((id: id, name: name))
+                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name))
                 }
                 return
             }
@@ -318,6 +318,13 @@ extension PavlokService: CBPeripheralDelegate {
             self.writeContinuation = nil
         }
     }
+}
+
+// MARK: - DiscoveredPeripheral
+
+struct DiscoveredPeripheral: Identifiable {
+    let id: String
+    let name: String
 }
 
 // MARK: - PavlokError

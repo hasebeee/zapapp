@@ -28,7 +28,7 @@ struct MainTabView: View {
             ZapRequestPoller.shared.registeredPeripheralId = appState.pavlokPeripheralId
             ZapRequestPoller.shared.start()
         }
-        .onChange(of: appState.pavlokPeripheralId) { _, newId in
+        .onChange(of: appState.pavlokPeripheralId) { newId in
             ZapRequestPoller.shared.registeredPeripheralId = newId
         }
         .onDisappear {
