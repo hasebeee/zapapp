@@ -5,7 +5,7 @@ import SwiftUI
 /// タブ2: 監視する（他人 side）
 struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
-    @StateObject private var poller = ZapRequestPoller.shared
+    @ObservedObject private var poller = ZapRequestPoller.shared
 
     var body: some View {
         TabView {
