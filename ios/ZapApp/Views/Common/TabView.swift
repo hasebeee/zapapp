@@ -25,8 +25,11 @@ struct MainTabView: View {
                 }
         }
         .onAppear {
-            // ポーリング開始（本人 side でのみ必要: Pavlok 所持者）
+            ZapRequestPoller.shared.registeredPeripheralId = appState.pavlokPeripheralId
             ZapRequestPoller.shared.start()
+        }
+        .onChange(of: appState.pavlokPeripheralId) { _, newId in
+            ZapRequestPoller.shared.registeredPeripheralId = newId
         }
         .onDisappear {
             ZapRequestPoller.shared.stop()

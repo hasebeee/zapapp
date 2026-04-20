@@ -5,6 +5,7 @@ struct SettingsView: View {
 
     @State private var showLogoutConfirm = false
     @State private var showInvite = false
+    @State private var showPavlokRegistration = false
 
     var body: some View {
         NavigationStack {
@@ -45,6 +46,32 @@ struct SettingsView: View {
                     Text("つながり")
                 }
 
+                // Pavlok設定
+                Section {
+                    Button {
+                        showPavlokRegistration = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "bolt.circle")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Pavlokを登録する")
+                                if let id = appState.pavlokPeripheralId {
+                                    Text("登録済み: \(id.prefix(8))...")
+                                        .font(.caption.monospaced())
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("未登録")
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                } header: {
+                    Text("デバイス")
+                }
+
                 // ログアウト
                 Section {
                     Button(role: .destructive) {
@@ -59,6 +86,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showInvite) {
                 InviteView()
+            }
+            .sheet(isPresented: $showPavlokRegistration) {
+                PavlokRegistrationView()
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)

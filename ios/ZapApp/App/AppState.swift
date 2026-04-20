@@ -27,6 +27,9 @@ final class AppState: ObservableObject {
     /// DB上のPostgreSQL UUID
     @Published var dbUserId: String? = nil
 
+    /// 登録済みPavlokのperipheral UUID
+    @Published var pavlokPeripheralId: String? = nil
+
     // MARK: - Private
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -40,12 +43,14 @@ final class AppState: ObservableObject {
                 self?.currentUser = user
                 self?.isLoggedIn = user != nil
                 if user != nil {
-                    // DBのUUIDを取得
+                    // DBのUUIDとPavlok登録情報を取得
                     if let profile = try? await APIClient.shared.getMyProfile() {
                         self?.dbUserId = profile.id
+                        self?.pavlokPeripheralId = profile.pavlokPeripheralId
                     }
                 } else {
                     self?.dbUserId = nil
+                    self?.pavlokPeripheralId = nil
                 }
             }
         }

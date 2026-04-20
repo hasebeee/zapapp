@@ -26,6 +26,30 @@ router.get('/profile', async (req: AuthRequest, res: Response): Promise<void> =>
 });
 
 // ──────────────────────────────────────────────
+// PUT /me/pavlok  — PavlokのperipheralIDを登録
+// ──────────────────────────────────────────────
+router.put('/pavlok', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { userId } = req.user!;
+  const { pavlok_peripheral_id } = req.body as { pavlok_peripheral_id?: string };
+
+  if (!pavlok_peripheral_id) {
+    res.status(400).json({ error: 'pavlok_peripheral_id is required' });
+    return;
+  }
+
+  try {
+    await pool.query(
+      `UPDATE users SET pavlok_peripheral_id = $1 WHERE id = $2`,
+      [pavlok_peripheral_id, userId]
+    );
+    res.json({ pavlok_peripheral_id });
+  } catch (err) {
+    console.error('PUT /me/pavlok error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────────
 // GET /me/zap_requests?status=created  — 自分のzap_requests
 // ──────────────────────────────────────────────
 router.get('/zap_requests', async (req: AuthRequest, res: Response): Promise<void> => {

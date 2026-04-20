@@ -22,6 +22,7 @@ final class PavlokService: NSObject, ObservableObject {
 
     @Published var connectionState: ConnectionState = .disconnected
     @Published var lastError: String? = nil
+    @Published var discoveredPeripherals: [(id: String, name: String)] = []
 
     // MARK: - Private
 
@@ -33,6 +34,10 @@ final class PavlokService: NSObject, ObservableObject {
     private var connectContinuation: CheckedContinuation<Void, Error>?
     /// write 完了を待つ continuation
     private var writeContinuation: CheckedContinuation<Void, Error>?
+    /// 登録スキャン中かどうか
+    private var isRegistrationScanning: Bool = false
+    /// 接続先として指定されたperipheral UUID
+    private var targetPeripheralId: String? = nil
 
     // MARK: - Init
 
@@ -44,8 +49,8 @@ final class PavlokService: NSObject, ObservableObject {
 
     // MARK: - Public API
 
-    /// スキャン開始 → Pavlok を発見したら接続
-    func connect() async throws {
+    /// スキャン開始 → Pavlok を発見したら接続（registeredIdが指定された場合はそのデバイスのみ）
+    func connect(registeredPeripheralId: String? = nil) async throws {
         guard centralManager.state == .poweredOn else {
             throw PavlokError.bluetoothUnavailable
         }
@@ -53,6 +58,7 @@ final class PavlokService: NSObject, ObservableObject {
 
         connectionState = .scanning
         lastError = nil
+        targetPeripheralId = registeredPeripheralId
 
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             self.connectContinuation = cont
@@ -70,9 +76,27 @@ final class PavlokService: NSObject, ObservableObject {
                     self.connectContinuation = nil
                     self.connectionState = .error
                     self.lastError = error.localizedDescription
+                    self.targetPeripheralId = nil
                 }
             }
         }
+    }
+
+    /// 登録用スキャン開始（見つかったPavlokを discoveredPeripherals に追加）
+    func startRegistrationScan() {
+        guard centralManager.state == .poweredOn else { return }
+        discoveredPeripherals = []
+        isRegistrationScanning = true
+        centralManager.scanForPeripherals(
+            withServices: [Self.pavlokServiceUUID],
+            options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
+        )
+    }
+
+    /// 登録用スキャン停止
+    func stopRegistrationScan() {
+        centralManager.stopScan()
+        isRegistrationScanning = false
     }
 
     /// Zap を送信する（最大 `count` 回、`interval` 秒間隔）
@@ -169,7 +193,24 @@ extension PavlokService: CBCentralManagerDelegate {
                                     advertisementData: [String: Any],
                                     rssi RSSI: NSNumber) {
         Task { @MainActor in
-            print("[PavlokService] Discovered: \(peripheral.name ?? "Unknown")")
+            print("[PavlokService] Discovered: \(peripheral.name ?? "Unknown") (\(peripheral.identifier.uuidString))")
+
+            // 登録スキャン中の場合はリストに追加するだけ
+            if self.isRegistrationScanning {
+                let id = peripheral.identifier.uuidString
+                let name = peripheral.name ?? "Pavlok"
+                if !self.discoveredPeripherals.contains(where: { $0.id == id }) {
+                    self.discoveredPeripherals.append((id: id, name: name))
+                }
+                return
+            }
+
+            // 登録済みIDが指定されている場合はそのデバイスのみ接続
+            if let targetId = self.targetPeripheralId,
+               peripheral.identifier.uuidString != targetId {
+                return
+            }
+
             central.stopScan()
             self.peripheral = peripheral
             self.peripheral?.delegate = self

@@ -21,6 +21,7 @@ export interface UserRow {
   display_name: string;
   created_at: Date;
   last_login_at: Date;
+  pavlok_peripheral_id: string | null;
 }
 
 export interface DeviceRow {

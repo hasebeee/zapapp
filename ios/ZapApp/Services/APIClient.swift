@@ -132,6 +132,11 @@ final class APIClient {
         return try await perform(req)
     }
 
+    func savePavlokPeripheralId(_ peripheralId: String) async throws {
+        let req = try await authorizedRequest(path: "/me/pavlok", method: "PUT")
+        try await performVoid(req, body: ["pavlok_peripheral_id": peripheralId])
+    }
+
     // MARK: - Invite APIs
 
     func createInvite(inviteeEmail: String) async throws -> InviteResponse {

@@ -27,6 +27,9 @@ final class ZapRequestPoller: ObservableObject {
     private let apiClient = APIClient.shared
     private let pavlokService = PavlokService.shared
 
+    /// 登録済みPavlok peripheral UUID（AppStateから設定）
+    var registeredPeripheralId: String? = nil
+
     /// 処理中の ZapRequest ID セット（多重実行防止）
     private var processingIds: Set<String> = []
 
@@ -83,9 +86,9 @@ final class ZapRequestPoller: ObservableObject {
     private func processZapRequest(_ zapRequest: ZapRequest) async {
         print("[ZapRequestPoller] Processing ZapRequest: \(zapRequest.id)")
 
-        // Step 1: Pavlok に接続
+        // Step 1: Pavlok に接続（登録済みIDがあればそのデバイスに限定）
         do {
-            try await pavlokService.connect()
+            try await pavlokService.connect(registeredPeripheralId: registeredPeripheralId)
         } catch {
             // 接続できなかった → not_started を報告
             print("[ZapRequestPoller] Cannot connect: \(error)")
