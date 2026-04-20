@@ -1,0 +1,644 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		94A1B5CE2F9271010030B0E0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 94A1B5CF2F9271010030B0E0 /* Assets.xcassets */; };
+		94A1B5C52F9270010030B0E0 /* ZapApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A1B5C62F9270010030B0E0 /* ZapApp.swift */; };
+		94A1B5C72F9270010030B0E0 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 94A1B5C82F9270010030B0E0 /* GoogleService-Info.plist */; };
+		94A1B5BD2F926A830030B0E0 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 94A1B5BC2F926A830030B0E0 /* FirebaseAuth */; };
+		94A1B5BF2F926A890030B0E0 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 94A1B5BE2F926A890030B0E0 /* FirebaseMessaging */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		94A1B5642F9261BF0030B0E0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 94A1B54B2F9261BD0030B0E0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 94A1B5522F9261BD0030B0E0;
+			remoteInfo = ZapApp;
+		};
+		94A1B56E2F9261BF0030B0E0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 94A1B54B2F9261BD0030B0E0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 94A1B5522F9261BD0030B0E0;
+			remoteInfo = ZapApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		94A1B5C62F9270010030B0E0 /* ZapApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZapApp.swift; sourceTree = "<group>"; };
+		94A1B5C82F9270010030B0E0 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		94A1B5CF2F9271010030B0E0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		94A1B5532F9261BD0030B0E0 /* ZapApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZapApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		94A1B5632F9261BF0030B0E0 /* ZapAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZapAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		94A1B56D2F9261BF0030B0E0 /* ZapAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ZapAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		94A1B5552F9261BD0030B0E0 /* App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = App;
+			sourceTree = "<group>";
+		};
+		94A1B5C92F9270010030B0E0 /* Models */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Models;
+			sourceTree = "<group>";
+		};
+		94A1B5CA2F9270010030B0E0 /* Services */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Services;
+			sourceTree = "<group>";
+		};
+		94A1B5CB2F9270010030B0E0 /* Views */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Views;
+			sourceTree = "<group>";
+		};
+		94A1B5662F9261BF0030B0E0 /* ZapAppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ZapAppTests;
+			sourceTree = "<group>";
+		};
+		94A1B5702F9261BF0030B0E0 /* ZapAppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ZapAppUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		94A1B5502F9261BD0030B0E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94A1B5BF2F926A890030B0E0 /* FirebaseMessaging in Frameworks */,
+				94A1B5BD2F926A830030B0E0 /* FirebaseAuth in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94A1B5602F9261BF0030B0E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94A1B56A2F9261BF0030B0E0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		94A1B54A2F9261BD0030B0E0 = {
+			isa = PBXGroup;
+			children = (
+				94A1B5552F9261BD0030B0E0 /* App */,
+				94A1B5C92F9270010030B0E0 /* Models */,
+				94A1B5CA2F9270010030B0E0 /* Services */,
+				94A1B5CB2F9270010030B0E0 /* Views */,
+				94A1B5CF2F9271010030B0E0 /* Assets.xcassets */,
+				94A1B5C62F9270010030B0E0 /* ZapApp.swift */,
+				94A1B5C82F9270010030B0E0 /* GoogleService-Info.plist */,
+				94A1B5662F9261BF0030B0E0 /* ZapAppTests */,
+				94A1B5702F9261BF0030B0E0 /* ZapAppUITests */,
+				94A1B5BB2F926A830030B0E0 /* Frameworks */,
+				94A1B5542F9261BD0030B0E0 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		94A1B5542F9261BD0030B0E0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				94A1B5532F9261BD0030B0E0 /* ZapApp.app */,
+				94A1B5632F9261BF0030B0E0 /* ZapAppTests.xctest */,
+				94A1B56D2F9261BF0030B0E0 /* ZapAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		94A1B5BB2F926A830030B0E0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		94A1B5522F9261BD0030B0E0 /* ZapApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94A1B5772F9261BF0030B0E0 /* Build configuration list for PBXNativeTarget "ZapApp" */;
+			buildPhases = (
+				94A1B54F2F9261BD0030B0E0 /* Sources */,
+				94A1B5502F9261BD0030B0E0 /* Frameworks */,
+				94A1B5512F9261BD0030B0E0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				94A1B5552F9261BD0030B0E0 /* App */,
+				94A1B5C92F9270010030B0E0 /* Models */,
+				94A1B5CA2F9270010030B0E0 /* Services */,
+				94A1B5CB2F9270010030B0E0 /* Views */,
+			);
+			name = ZapApp;
+			packageProductDependencies = (
+				94A1B5BC2F926A830030B0E0 /* FirebaseAuth */,
+				94A1B5BE2F926A890030B0E0 /* FirebaseMessaging */,
+			);
+			productName = ZapApp;
+			productReference = 94A1B5532F9261BD0030B0E0 /* ZapApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		94A1B5622F9261BF0030B0E0 /* ZapAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94A1B57A2F9261BF0030B0E0 /* Build configuration list for PBXNativeTarget "ZapAppTests" */;
+			buildPhases = (
+				94A1B55F2F9261BF0030B0E0 /* Sources */,
+				94A1B5602F9261BF0030B0E0 /* Frameworks */,
+				94A1B5612F9261BF0030B0E0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				94A1B5652F9261BF0030B0E0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				94A1B5662F9261BF0030B0E0 /* ZapAppTests */,
+			);
+			name = ZapAppTests;
+			packageProductDependencies = (
+			);
+			productName = ZapAppTests;
+			productReference = 94A1B5632F9261BF0030B0E0 /* ZapAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		94A1B56C2F9261BF0030B0E0 /* ZapAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 94A1B57D2F9261BF0030B0E0 /* Build configuration list for PBXNativeTarget "ZapAppUITests" */;
+			buildPhases = (
+				94A1B5692F9261BF0030B0E0 /* Sources */,
+				94A1B56A2F9261BF0030B0E0 /* Frameworks */,
+				94A1B56B2F9261BF0030B0E0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				94A1B56F2F9261BF0030B0E0 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				94A1B5702F9261BF0030B0E0 /* ZapAppUITests */,
+			);
+			name = ZapAppUITests;
+			packageProductDependencies = (
+			);
+			productName = ZapAppUITests;
+			productReference = 94A1B56D2F9261BF0030B0E0 /* ZapAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		94A1B54B2F9261BD0030B0E0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 1620;
+				TargetAttributes = {
+					94A1B5522F9261BD0030B0E0 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					94A1B5622F9261BF0030B0E0 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 94A1B5522F9261BD0030B0E0;
+					};
+					94A1B56C2F9261BF0030B0E0 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 94A1B5522F9261BD0030B0E0;
+					};
+				};
+			};
+			buildConfigurationList = 94A1B54E2F9261BD0030B0E0 /* Build configuration list for PBXProject "ZapApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 94A1B54A2F9261BD0030B0E0;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				94A1B5BA2F9264420030B0E0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 94A1B5542F9261BD0030B0E0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				94A1B5522F9261BD0030B0E0 /* ZapApp */,
+				94A1B5622F9261BF0030B0E0 /* ZapAppTests */,
+				94A1B56C2F9261BF0030B0E0 /* ZapAppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		94A1B5512F9261BD0030B0E0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94A1B5CE2F9271010030B0E0 /* Assets.xcassets in Resources */,
+				94A1B5C72F9270010030B0E0 /* GoogleService-Info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94A1B5612F9261BF0030B0E0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94A1B56B2F9261BF0030B0E0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		94A1B54F2F9261BD0030B0E0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94A1B5C52F9270010030B0E0 /* ZapApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94A1B55F2F9261BF0030B0E0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		94A1B5692F9261BF0030B0E0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		94A1B5652F9261BF0030B0E0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 94A1B5522F9261BD0030B0E0 /* ZapApp */;
+			targetProxy = 94A1B5642F9261BF0030B0E0 /* PBXContainerItemProxy */;
+		};
+		94A1B56F2F9261BF0030B0E0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 94A1B5522F9261BD0030B0E0 /* ZapApp */;
+			targetProxy = 94A1B56E2F9261BF0030B0E0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		94A1B5752F9261BF0030B0E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		94A1B5762F9261BF0030B0E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		94A1B5782F9261BF0030B0E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ZapApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Preview Content\"";
+				DEVELOPMENT_TEAM = ZP22DMY997;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hasebeee.zapapp2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		94A1B5792F9261BF0030B0E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ZapApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Preview Content\"";
+				DEVELOPMENT_TEAM = ZP22DMY997;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hasebeee.zapapp2;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		94A1B57B2F9261BF0030B0E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZP22DMY997;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hasebeee.ZapAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ZapApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ZapApp";
+			};
+			name = Debug;
+		};
+		94A1B57C2F9261BF0030B0E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZP22DMY997;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hasebeee.ZapAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ZapApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ZapApp";
+			};
+			name = Release;
+		};
+		94A1B57E2F9261BF0030B0E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZP22DMY997;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hasebeee.ZapAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ZapApp;
+			};
+			name = Debug;
+		};
+		94A1B57F2F9261BF0030B0E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = ZP22DMY997;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hasebeee.ZapAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ZapApp;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		94A1B54E2F9261BD0030B0E0 /* Build configuration list for PBXProject "ZapApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94A1B5752F9261BF0030B0E0 /* Debug */,
+				94A1B5762F9261BF0030B0E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94A1B5772F9261BF0030B0E0 /* Build configuration list for PBXNativeTarget "ZapApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94A1B5782F9261BF0030B0E0 /* Debug */,
+				94A1B5792F9261BF0030B0E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94A1B57A2F9261BF0030B0E0 /* Build configuration list for PBXNativeTarget "ZapAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94A1B57B2F9261BF0030B0E0 /* Debug */,
+				94A1B57C2F9261BF0030B0E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		94A1B57D2F9261BF0030B0E0 /* Build configuration list for PBXNativeTarget "ZapAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				94A1B57E2F9261BF0030B0E0 /* Debug */,
+				94A1B57F2F9261BF0030B0E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		94A1B5BA2F9264420030B0E0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.12.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		94A1B5BC2F926A830030B0E0 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 94A1B5BA2F9264420030B0E0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		94A1B5BE2F926A890030B0E0 /* FirebaseMessaging */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 94A1B5BA2F9264420030B0E0 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseMessaging;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 94A1B54B2F9261BD0030B0E0 /* Project object */;
+}
