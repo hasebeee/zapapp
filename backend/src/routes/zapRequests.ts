@@ -11,6 +11,8 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
   const statusFilter = req.query.status as string | undefined;
 
+  console.log(`[GET /zap_requests] userId=${userId} status=${statusFilter ?? 'all'}`);
+
   try {
     let query: string;
     let params: unknown[];
@@ -24,9 +26,10 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const result = await pool.query<ZapRequestRow>(query, params);
+    console.log(`[GET /zap_requests] Returning ${result.rows.length} record(s) for userId=${userId}`);
     res.json(result.rows);
   } catch (err) {
-    console.error('GET /zap_requests error:', err);
+    console.error('[GET /zap_requests] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -38,6 +41,8 @@ router.post('/:id/start', async (req: AuthRequest, res: Response): Promise<void>
   const { userId } = req.user!;
   const { id } = req.params;
 
+  console.log(`[POST /zap_requests/:id/start] userId=${userId} zapRequestId=${id}`);
+
   try {
     const result = await pool.query<ZapRequestRow>(
       `SELECT * FROM zap_requests WHERE id = $1 AND owner_user_id = $2`,
@@ -45,6 +50,7 @@ router.post('/:id/start', async (req: AuthRequest, res: Response): Promise<void>
     );
 
     if (result.rows.length === 0) {
+      console.warn(`[POST /zap_requests/:id/start] Not found: id=${id} userId=${userId}`);
       res.status(404).json({ error: 'Zap request not found' });
       return;
     }
@@ -53,6 +59,7 @@ router.post('/:id/start', async (req: AuthRequest, res: Response): Promise<void>
 
     // 冪等: すでにexecutedなら200
     if (zapRequest.status === 'executed') {
+      console.log(`[POST /zap_requests/:id/start] Already executed: id=${id}`);
       res.json({ ok: true });
       return;
     }
@@ -62,9 +69,10 @@ router.post('/:id/start', async (req: AuthRequest, res: Response): Promise<void>
       [id]
     );
 
+    console.log(`[POST /zap_requests/:id/start] Started: id=${id}`);
     res.json({ ok: true });
   } catch (err) {
-    console.error('POST /zap_requests/:id/start error:', err);
+    console.error('[POST /zap_requests/:id/start] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -87,6 +95,8 @@ router.post('/:id/result', async (req: AuthRequest, res: Response): Promise<void
     last_error_message?: string;
   };
 
+  console.log(`[POST /zap_requests/:id/result] userId=${userId} zapRequestId=${id} attempted=${attemptedZaps} succeeded=${succeededZaps} errorCode=${lastErrorCode ?? 'none'}`);
+
   try {
     const result = await pool.query<ZapRequestRow>(
       `SELECT * FROM zap_requests WHERE id = $1 AND owner_user_id = $2`,
@@ -94,6 +104,7 @@ router.post('/:id/result', async (req: AuthRequest, res: Response): Promise<void
     );
 
     if (result.rows.length === 0) {
+      console.warn(`[POST /zap_requests/:id/result] Not found: id=${id} userId=${userId}`);
       res.status(404).json({ error: 'Zap request not found' });
       return;
     }
@@ -108,9 +119,10 @@ router.post('/:id/result', async (req: AuthRequest, res: Response): Promise<void
       [attemptedZaps ?? null, succeededZaps ?? null, lastErrorCode ?? null, lastErrorMessage ?? null, id]
     );
 
+    console.log(`[POST /zap_requests/:id/result] Updated: id=${id}`);
     res.json({ ok: true });
   } catch (err) {
-    console.error('POST /zap_requests/:id/result error:', err);
+    console.error('[POST /zap_requests/:id/result] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -129,6 +141,8 @@ router.post('/:id/not_started', async (req: AuthRequest, res: Response): Promise
     last_error_message?: string;
   };
 
+  console.log(`[POST /zap_requests/:id/not_started] userId=${userId} zapRequestId=${id} errorCode=${lastErrorCode ?? 'none'}`);
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -140,6 +154,7 @@ router.post('/:id/not_started', async (req: AuthRequest, res: Response): Promise
 
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
+      console.warn(`[POST /zap_requests/:id/not_started] Not found: id=${id} userId=${userId}`);
       res.status(404).json({ error: 'Zap request not found' });
       return;
     }
@@ -149,6 +164,7 @@ router.post('/:id/not_started', async (req: AuthRequest, res: Response): Promise
     // 冪等: すでにnot_startedなら200
     if (zapRequest.status === 'not_started') {
       await client.query('ROLLBACK');
+      console.log(`[POST /zap_requests/:id/not_started] Already not_started: id=${id}`);
       res.json({ ok: true });
       return;
     }
@@ -178,11 +194,12 @@ router.post('/:id/not_started', async (req: AuthRequest, res: Response): Promise
     );
 
     await client.query('COMMIT');
+    console.log(`[POST /zap_requests/:id/not_started] Marked not_started: id=${id} taskStatus=${newTaskStatus}`);
 
     res.json({ ok: true });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('POST /zap_requests/:id/not_started error:', err);
+    console.error('[POST /zap_requests/:id/not_started] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
     client.release();
@@ -196,6 +213,8 @@ router.post('/:id/ack', async (req: AuthRequest, res: Response): Promise<void> =
   const { userId } = req.user!;
   const { id } = req.params;
 
+  console.log(`[POST /zap_requests/:id/ack] userId=${userId} zapRequestId=${id}`);
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -207,6 +226,7 @@ router.post('/:id/ack', async (req: AuthRequest, res: Response): Promise<void> =
 
     if (result.rows.length === 0) {
       await client.query('ROLLBACK');
+      console.warn(`[POST /zap_requests/:id/ack] Not found: id=${id} userId=${userId}`);
       res.status(404).json({ error: 'Zap request not found' });
       return;
     }
@@ -215,6 +235,7 @@ router.post('/:id/ack', async (req: AuthRequest, res: Response): Promise<void> =
 
     if (zapRequest.status !== 'executed') {
       await client.query('ROLLBACK');
+      console.warn(`[POST /zap_requests/:id/ack] Cannot ack: status=${zapRequest.status} id=${id}`);
       res.status(400).json({ error: `Cannot ack: zap_request status is ${zapRequest.status}` });
       return;
     }
@@ -240,11 +261,12 @@ router.post('/:id/ack', async (req: AuthRequest, res: Response): Promise<void> =
     );
 
     await client.query('COMMIT');
+    console.log(`[POST /zap_requests/:id/ack] ACK completed: zapRequestId=${id} taskId=${zapRequest.task_id}`);
 
     res.json({ ok: true });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('POST /zap_requests/:id/ack error:', err);
+    console.error('[POST /zap_requests/:id/ack] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
     client.release();

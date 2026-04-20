@@ -12,6 +12,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
   const { invitee_email: inviteeEmail } = req.body as { invitee_email?: string };
 
+  console.log(`[POST /invites] userId=${userId} inviteeEmail=${inviteeEmail ?? 'none'}`);
+
   if (!inviteeEmail) {
     res.status(400).json({ error: 'invitee_email is required' });
     return;
@@ -28,9 +30,10 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       [userId, inviteeEmail, token, expiresAt]
     );
 
+    console.log(`[POST /invites] Created invite id=${result.rows[0].id} for inviteeEmail=${inviteeEmail}`);
     res.status(201).json({ invite: result.rows[0] });
   } catch (err) {
-    console.error('POST /invites error:', err);
+    console.error('[POST /invites] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -41,6 +44,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
   const statusFilter = req.query.status as string | undefined;
+
+  console.log(`[GET /invites] userId=${userId} status=${statusFilter ?? 'all'}`);
 
   try {
     let query: string;
@@ -55,9 +60,10 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const result = await pool.query<InviteRow>(query, params);
+    console.log(`[GET /invites] Returning ${result.rows.length} invite(s) for userId=${userId}`);
     res.json(result.rows);
   } catch (err) {
-    console.error('GET /invites error:', err);
+    console.error('[GET /invites] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -68,6 +74,8 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
 router.post('/accept', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId, email } = req.user!;
   const { token } = req.body as { token?: string };
+
+  console.log(`[POST /invites/accept] userId=${userId} email=${email}`);
 
   if (!token) {
     res.status(400).json({ error: 'token is required' });
@@ -86,15 +94,18 @@ router.post('/accept', async (req: AuthRequest, res: Response): Promise<void> =>
 
     if (inviteResult.rows.length === 0) {
       await client.query('ROLLBACK');
+      console.warn(`[POST /invites/accept] Invite not found for token`);
       res.status(404).json({ error: 'Invite not found' });
       return;
     }
 
     const invite = inviteResult.rows[0];
+    console.log(`[POST /invites/accept] Found invite id=${invite.id} status=${invite.status} owner=${invite.owner_user_id}`);
 
     // pending確認
     if (invite.status !== 'pending') {
       await client.query('ROLLBACK');
+      console.warn(`[POST /invites/accept] Invite not pending: id=${invite.id} status=${invite.status}`);
       res.status(400).json({ error: `Invite is ${invite.status}` });
       return;
     }
@@ -102,6 +113,7 @@ router.post('/accept', async (req: AuthRequest, res: Response): Promise<void> =>
     // 期限確認
     if (new Date() > new Date(invite.expires_at)) {
       await client.query('ROLLBACK');
+      console.warn(`[POST /invites/accept] Invite expired: id=${invite.id}`);
       res.status(400).json({ error: 'Invite has expired' });
       return;
     }
@@ -121,11 +133,12 @@ router.post('/accept', async (req: AuthRequest, res: Response): Promise<void> =>
     );
 
     await client.query('COMMIT');
+    console.log(`[POST /invites/accept] Relationship created id=${relResult.rows[0].id} owner=${invite.owner_user_id} controller=${userId}`);
 
     res.json({ relationship: relResult.rows[0] });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('POST /invites/accept error:', err);
+    console.error('[POST /invites/accept] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
     client.release();

@@ -10,6 +10,8 @@ const router = Router();
 router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
 
+  console.log(`[GET /relationships] userId=${userId}`);
+
   try {
     const result = await pool.query(
       `SELECT
@@ -37,9 +39,10 @@ router.get('/', async (req: AuthRequest, res: Response): Promise<void> => {
       [userId]
     );
 
+    console.log(`[GET /relationships] Returning ${result.rows.length} relationship(s) for userId=${userId}`);
     res.json(result.rows);
   } catch (err) {
-    console.error('GET /relationships error:', err);
+    console.error('[GET /relationships] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -52,6 +55,8 @@ router.delete('/:relationshipId', async (req: AuthRequest, res: Response): Promi
   const { userId } = req.user!;
   const { relationshipId } = req.params;
 
+  console.log(`[DELETE /relationships/:relationshipId] userId=${userId} relationshipId=${relationshipId}`);
+
   try {
     // 関係を取得
     const result = await pool.query<RelationshipRow>(
@@ -60,6 +65,7 @@ router.delete('/:relationshipId', async (req: AuthRequest, res: Response): Promi
     );
 
     if (result.rows.length === 0) {
+      console.warn(`[DELETE /relationships/:relationshipId] Not found: id=${relationshipId}`);
       res.status(404).json({ error: 'Relationship not found' });
       return;
     }
@@ -68,11 +74,13 @@ router.delete('/:relationshipId', async (req: AuthRequest, res: Response): Promi
 
     // 権限確認
     if (rel.owner_user_id !== userId && rel.controller_user_id !== userId) {
+      console.warn(`[DELETE /relationships/:relationshipId] Forbidden: userId=${userId} relationshipId=${relationshipId}`);
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
     if (rel.status === 'blocked') {
+      console.warn(`[DELETE /relationships/:relationshipId] Already blocked: id=${relationshipId}`);
       res.status(400).json({ error: 'Relationship is already blocked' });
       return;
     }
@@ -86,9 +94,10 @@ router.delete('/:relationshipId', async (req: AuthRequest, res: Response): Promi
       [userId, relationshipId]
     );
 
+    console.log(`[DELETE /relationships/:relationshipId] Blocked: id=${relationshipId}`);
     res.json({ status: updated.rows[0].status });
   } catch (err) {
-    console.error('DELETE /relationships/:id error:', err);
+    console.error('[DELETE /relationships/:relationshipId] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -12,6 +12,8 @@ router.get('/:ownerUserId/tasks', async (req: AuthRequest, res: Response): Promi
   const { ownerUserId } = req.params;
   const statusQuery = req.query.status as string | undefined;
 
+  console.log(`[GET /owners/:ownerUserId/tasks] controllerUserId=${controllerUserId} ownerUserId=${ownerUserId} status=${statusQuery ?? 'all'}`);
+
   try {
     // relationship active確認
     const relResult = await pool.query(
@@ -21,6 +23,7 @@ router.get('/:ownerUserId/tasks', async (req: AuthRequest, res: Response): Promi
     );
 
     if (relResult.rows.length === 0) {
+      console.warn(`[GET /owners/:ownerUserId/tasks] No active relationship: owner=${ownerUserId} controller=${controllerUserId}`);
       res.status(403).json({ error: 'No active relationship with this owner' });
       return;
     }
@@ -38,9 +41,10 @@ router.get('/:ownerUserId/tasks', async (req: AuthRequest, res: Response): Promi
     }
 
     const result = await pool.query<TaskRow>(query, params);
+    console.log(`[GET /owners/:ownerUserId/tasks] Returning ${result.rows.length} task(s) for owner=${ownerUserId} controller=${controllerUserId}`);
     res.json(result.rows);
   } catch (err) {
-    console.error('GET /owners/:ownerUserId/tasks error:', err);
+    console.error('[GET /owners/:ownerUserId/tasks] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
