@@ -355,7 +355,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
 // GET /tasks/:taskId/latest_zap_request  — 最新zap_request取得（他人）
 // ──────────────────────────────────────────────
 router.get('/:taskId/latest_zap_request', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { userId: controllerUserId } = req.user!;
+  const { userId } = req.user!;
   const { taskId } = req.params;
 
   try {
@@ -372,16 +372,18 @@ router.get('/:taskId/latest_zap_request', async (req: AuthRequest, res: Response
 
     const task = taskResult.rows[0];
 
-    // relationship active確認
-    const relResult = await pool.query(
-      `SELECT id FROM relationships
-       WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
-      [task.owner_user_id, controllerUserId]
-    );
-
-    if (relResult.rows.length === 0) {
-      res.status(403).json({ error: 'No active relationship' });
-      return;
+    // オーナー本人 または アクティブなControllerであればアクセス可
+    const isOwner = task.owner_user_id === userId;
+    if (!isOwner) {
+      const relResult = await pool.query(
+        `SELECT id FROM relationships
+         WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
+        [task.owner_user_id, userId]
+      );
+      if (relResult.rows.length === 0) {
+        res.status(403).json({ error: 'No active relationship' });
+        return;
+      }
     }
 
     const zapResult = await pool.query<ZapRequestRow>(
