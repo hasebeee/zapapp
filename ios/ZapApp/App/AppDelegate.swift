@@ -1,5 +1,6 @@
 import UIKit
 import UserNotifications
+import FirebaseMessaging
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
 
@@ -9,6 +10,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // FCM デリゲート設定
+        Messaging.messaging().delegate = self
+
         // 通知権限リクエスト
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error {
@@ -26,17 +30,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    // MARK: - APNs トークン取得成功 → バックエンドに登録
+    // MARK: - APNs トークン取得 → Firebase に渡す
 
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        let token = deviceToken.map { String(format: "%02x", $0) }.joined()
-        print("[AppDelegate] APNs token: \(token)")
-        Task {
-            try? await APIClient.shared.registerDevice(pushToken: token)
-        }
+        // APNs トークンを Firebase に渡して FCM トークンを生成させる
+        Messaging.messaging().apnsToken = deviceToken
+        print("[AppDelegate] APNs token set to Firebase Messaging")
     }
 
     func application(
@@ -57,5 +59,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             ZapRequestPoller.shared.start()
         }
         completionHandler(.newData)
+    }
+}
+
+// MARK: - MessagingDelegate
+
+extension AppDelegate: MessagingDelegate {
+
+    /// FCM トークンが取得 / 更新されたらバックエンドに登録
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        guard let fcmToken else { return }
+        print("[AppDelegate] FCM token: \(fcmToken)")
+        Task {
+            try? await APIClient.shared.registerDevice(pushToken: fcmToken)
+        }
     }
 }
