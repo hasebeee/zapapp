@@ -337,25 +337,31 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
     await client.query('COMMIT');
     console.log(`[POST /tasks/:taskId/zap] ZapRequest created id=${zapRequest.id} taskId=${taskId} owner=${task.owner_user_id}`);
 
-    // オーナーの全デバイスへAPNsサイレントpush送信
+    // オーナーの全デバイスへアラート+サイレントpush送信
     try {
       const devicesResult = await pool.query<DeviceRow>(
         `SELECT * FROM devices WHERE user_id = $1`,
         [task.owner_user_id]
       );
-      console.log(`[POST /tasks/:taskId/zap] Sending silent push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`);
+      console.log(`[POST /tasks/:taskId/zap] Sending push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`);
 
       const pushPromises = devicesResult.rows.map((device) =>
         admin.messaging().send({
           token: device.push_token,
+          notification: {
+            title: '⚡ Zapされました！',
+            body: `「${task.title}」のタスクにZapが届きました`,
+          },
           apns: {
             headers: {
-              'apns-push-type': 'background',
-              'apns-priority': '5',
+              'apns-push-type': 'alert',
+              'apns-priority': '10',
             },
             payload: {
               aps: {
                 'content-available': 1,
+                sound: 'default',
+                badge: 1,
               },
               zapRequestId: zapRequest.id,
               taskId,
@@ -367,7 +373,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
       );
 
       await Promise.all(pushPromises);
-      console.log(`[POST /tasks/:taskId/zap] Silent push sent for zapRequest=${zapRequest.id}`);
+      console.log(`[POST /tasks/:taskId/zap] Alert+silent push sent for zapRequest=${zapRequest.id}`);
     } catch (pushErr) {
       console.error('[POST /tasks/:taskId/zap] Push notification error:', pushErr);
       // push失敗はクリティカルではないので続行
