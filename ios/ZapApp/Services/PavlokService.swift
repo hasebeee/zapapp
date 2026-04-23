@@ -67,11 +67,16 @@ final class PavlokService: NSObject, ObservableObject {
                 withServices: nil,
                 options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
             )
-            // タイムアウト: 15秒
-            Task {
-                try await Task.sleep(nanoseconds: 15_000_000_000)
-                if self.connectionState == .scanning {
+            // タイムアウト: 15秒（scanning/connecting/サービス探索中いずれでもハングしたら強制終了）
+            Task.detached {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                await MainActor.run {
+                    guard self.connectContinuation != nil else { return }
                     self.centralManager.stopScan()
+                    if let p = self.peripheral {
+                        self.centralManager.cancelPeripheralConnection(p)
+                        self.peripheral = nil
+                    }
                     let error = PavlokError.scanTimeout
                     self.connectContinuation?.resume(throwing: error)
                     self.connectContinuation = nil
