@@ -1,4 +1,5 @@
 import SwiftUI
+import FirebaseAuth
 
 struct SignUpView: View {
     @EnvironmentObject private var appState: AppState
@@ -105,8 +106,18 @@ struct SignUpView: View {
         do {
             _ = try await AuthService.shared.signUp(email: email, password: password)
             // AppState は Firebase Auth の状態変化リスナーで自動更新される
-        } catch {
-            errorMessage = error.localizedDescription
+        } catch let error as NSError {
+            let code = AuthErrorCode(rawValue: error.code)
+            switch code {
+            case .emailAlreadyInUse:
+                errorMessage = "このメールアドレスはすでに登録されています"
+            case .invalidEmail:
+                errorMessage = "メールアドレスの形式が正しくありません"
+            case .weakPassword:
+                errorMessage = "パスワードが短すぎます（6文字以上にしてください）"
+            default:
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
