@@ -344,11 +344,9 @@ struct DiscoveredPeripheral: Identifiable {
     var rssi: Int  // dBm。0に近いほど電波が強い（近い）
 
     var rssiLabel: String {
-        switch rssi {
-        case -50...:   return "電波強 ▶▶▶"
-        case -70..<(-50): return "電波中 ▶▶"
-        default:       return "電波弱 ▶"
-        }
+        if rssi >= -50 { return "電波強 ▶▶▶" }
+        if rssi >= -70 { return "電波中 ▶▶" }
+        return "電波弱 ▶"
     }
 }
 
