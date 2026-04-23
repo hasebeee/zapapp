@@ -13,6 +13,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // FCM デリゲート設定
         Messaging.messaging().delegate = self
 
+        // 通知デリゲート設定（タップ検知用）
+        UNUserNotificationCenter.current().delegate = self
+
         // 通知権限リクエスト
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error {
@@ -36,7 +39,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        // APNs トークンを Firebase に渡して FCM トークンを生成させる
         Messaging.messaging().apnsToken = deviceToken
         print("[AppDelegate] APNs token set to Firebase Messaging")
     }
@@ -55,10 +57,45 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        print("[AppDelegate] Silent push received, starting poller")
         Task { @MainActor in
             ZapRequestPoller.shared.start()
         }
         completionHandler(.newData)
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+
+    /// 通知バナーをタップしてアプリが起動・フォアグラウンドになった時
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        print("[AppDelegate] Notification tapped: \(userInfo)")
+
+        // Zap通知タップ時はポーラーを即座に起動
+        if userInfo["zapRequestId"] != nil {
+            print("[AppDelegate] Zap notification tapped, starting poller immediately")
+            Task { @MainActor in
+                ZapRequestPoller.shared.start()
+            }
+        }
+
+        completionHandler()
+    }
+
+    /// フォアグラウンド中に通知が届いた時もバナー表示する
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .badge])
     }
 }
 
