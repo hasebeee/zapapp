@@ -374,7 +374,7 @@ struct SentGiftRowView: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(gift.status == .used ? Color.secondary.opacity(0.2) : Color.pink.opacity(0.2))
-                .foregroundStyle(gift.status == .used ? .secondary : .pink)
+                .foregroundStyle(gift.status == .used ? AnyShapeStyle(.secondary) : AnyShapeStyle(.pink))
                 .clipShape(Capsule())
         }
         .padding(.vertical, 2)
