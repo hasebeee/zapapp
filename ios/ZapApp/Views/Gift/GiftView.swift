@@ -350,7 +350,7 @@ struct SentGiftRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: gift.status == .used ? "gift" : "gift.fill")
-                .foregroundStyle(gift.status == .used ? .secondary : .pink)
+                .foregroundStyle(gift.status == .used ? AnyShapeStyle(.secondary) : AnyShapeStyle(.pink))
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -388,7 +388,7 @@ struct ReceivedGiftRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: gift.status == .used ? "gift" : "gift.fill")
-                .foregroundStyle(gift.status == .used ? .secondary : .pink)
+                .foregroundStyle(gift.status == .used ? AnyShapeStyle(.secondary) : AnyShapeStyle(.pink))
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 4) {
