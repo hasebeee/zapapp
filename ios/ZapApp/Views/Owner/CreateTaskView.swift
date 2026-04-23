@@ -94,7 +94,7 @@ struct CreateTaskView: View {
         do {
             relationships = try await APIClient.shared.getRelationships()
         } catch {
-            // 取得失敗は無視（監視者なしで作成可能）
+            // 取得失敗は無視（監視者一覧なしの場合は作成ボタンが無効のまま）
         }
     }
 
