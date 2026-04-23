@@ -13,7 +13,7 @@ struct CreateTaskView: View {
     @State private var errorMessage: String? = nil
 
     private var isFormValid: Bool {
-        !title.trimmingCharacters(in: .whitespaces).isEmpty && dueAt > .now
+        !title.trimmingCharacters(in: .whitespaces).isEmpty && dueAt > .now && selectedRelationship != nil
     }
 
     var body: some View {

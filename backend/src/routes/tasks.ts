@@ -18,8 +18,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 
   console.log(`[POST /tasks] userId=${userId} title=${title} due_at=${due_at} controller_user_id=${controller_user_id ?? 'none'}`);
 
-  if (!title || !due_at) {
-    res.status(400).json({ error: 'title and due_at are required' });
+  if (!title || !due_at || !controller_user_id) {
+    res.status(400).json({ error: 'title, due_at and controller_user_id are required' });
     return;
   }
 
