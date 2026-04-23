@@ -14,8 +14,9 @@ struct PavlokRegistrationView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollView {
             VStack(spacing: 24) {
-                Spacer()
+                Spacer(minLength: 16)
 
                 Image(systemName: "dot.radiowaves.left.and.right")
                     .font(.system(size: 64))
@@ -157,8 +158,9 @@ struct PavlokRegistrationView: View {
                         .padding(.horizontal)
                 }
 
-                Spacer()
+                Spacer(minLength: 16)
             }
+            } // ScrollView
             .navigationTitle("Pavlok登録")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
