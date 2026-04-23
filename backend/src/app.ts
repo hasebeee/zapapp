@@ -19,17 +19,36 @@ dotenv.config();
 // Firebase Admin SDK 初期化
 // ──────────────────────────────────────────────
 if (!admin.apps.length) {
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    : undefined;
+  let credential: admin.credential.Credential;
 
-  admin.initializeApp({
-    credential: admin.credential.cert({
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    // base64エンコードされたサービスアカウントJSONを使用（改行問題を回避）
+    try {
+      const json = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
+      const serviceAccount = JSON.parse(json);
+      credential = admin.credential.cert(serviceAccount);
+      console.log('[Firebase] Initialized with FIREBASE_SERVICE_ACCOUNT_BASE64');
+    } catch (e) {
+      console.error('[Firebase] Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e);
+      process.exit(1);
+    }
+  } else {
+    // 個別の環境変数を使用（フォールバック）
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY
+      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : undefined;
+    console.log('[Firebase] projectId:', process.env.FIREBASE_PROJECT_ID);
+    console.log('[Firebase] clientEmail:', process.env.FIREBASE_CLIENT_EMAIL);
+    console.log('[Firebase] privateKey length:', privateKey?.length ?? 0);
+    credential = admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey,
-    }),
-  });
+    });
+    console.log('[Firebase] Initialized with individual env vars');
+  }
+
+  admin.initializeApp({ credential });
 }
 
 // ──────────────────────────────────────────────
