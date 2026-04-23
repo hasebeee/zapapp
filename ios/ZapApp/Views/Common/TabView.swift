@@ -19,6 +19,11 @@ struct MainTabView: View {
                     Label("監視する", systemImage: "bolt.fill")
                 }
 
+            GiftView()
+                .tabItem {
+                    Label("ギフト", systemImage: "gift")
+                }
+
             SettingsView()
                 .tabItem {
                     Label("設定", systemImage: "gearshape")

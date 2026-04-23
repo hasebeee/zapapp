@@ -11,6 +11,7 @@ import relationshipsRouter from './routes/relationships';
 import ownersRouter from './routes/owners';
 import meRouter from './routes/me';
 import devicesRouter from './routes/devices';
+import giftsRouter from './routes/gifts';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ app.use('/relationships', relationshipsRouter);
 app.use('/owners', ownersRouter);
 app.use('/me', meRouter);
 app.use('/devices', devicesRouter);
+app.use('/gifts', giftsRouter);
 
 // 404ハンドラ
 app.use((_req, res) => {

@@ -112,3 +112,20 @@ CREATE TABLE IF NOT EXISTS ack_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ack_events_zap_request ON ack_events(zap_request_id);
+
+-- ──────────────────────────────────────────────
+-- gifts
+-- ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS gifts (
+  id                    UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  owner_user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  controller_user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  message               TEXT NOT NULL DEFAULT '',
+  status                TEXT NOT NULL CHECK (status IN ('pending', 'used')) DEFAULT 'pending',
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  used_at               TIMESTAMPTZ,
+  task_id               UUID REFERENCES tasks(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_gifts_owner ON gifts(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_gifts_controller ON gifts(controller_user_id);

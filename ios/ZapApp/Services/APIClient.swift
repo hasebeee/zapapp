@@ -283,6 +283,34 @@ final class APIClient {
         try await performVoid(mutableReq)
     }
 
+    // MARK: - Gift APIs
+
+    func sendGift(controllerUserId: String, message: String) async throws -> Gift {
+        let req = try await authorizedRequest(path: "/gifts", method: "POST")
+        return try await perform(req, body: ["controller_user_id": controllerUserId, "message": message])
+    }
+
+    func getSentGifts() async throws -> [Gift] {
+        let req = try await authorizedRequest(path: "/gifts/sent")
+        return try await perform(req)
+    }
+
+    func getReceivedGifts() async throws -> [Gift] {
+        let req = try await authorizedRequest(path: "/gifts/received")
+        return try await perform(req)
+    }
+
+    func useGift(giftId: String, title: String, dueAt: Date) async throws -> GiftUseResponse {
+        let req = try await authorizedRequest(path: "/gifts/\(giftId)/use", method: "POST")
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let body: [String: String] = [
+            "title": title,
+            "due_at": isoFormatter.string(from: dueAt)
+        ]
+        return try await perform(req, body: body)
+    }
+
     func ackZapRequest(id: String) async throws {
         let req = try await authorizedRequest(path: "/zap_requests/\(id)/ack", method: "POST")
         try await performVoid(req)

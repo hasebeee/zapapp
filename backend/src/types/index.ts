@@ -104,6 +104,17 @@ export interface ZapRequestRow {
   last_error_message: string | null;
 }
 
+export interface GiftRow {
+  id: string;
+  owner_user_id: string;
+  controller_user_id: string;
+  message: string;
+  status: 'pending' | 'used';
+  created_at: Date;
+  used_at: Date | null;
+  task_id: string | null;
+}
+
 export interface AckEventRow {
   id: string;
   zap_request_id: string;
