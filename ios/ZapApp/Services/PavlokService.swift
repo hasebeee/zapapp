@@ -62,8 +62,9 @@ final class PavlokService: NSObject, ObservableObject {
 
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
             self.connectContinuation = cont
+            // withServices: nil で全デバイスをスキャン（PavlokはServiceUUIDをアドバタイズしないため）
             self.centralManager.scanForPeripherals(
-                withServices: [Self.pavlokServiceUUID],
+                withServices: nil,
                 options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
             )
             // タイムアウト: 15秒
@@ -99,6 +100,13 @@ final class PavlokService: NSObject, ObservableObject {
     func stopRegistrationScan() {
         centralManager.stopScan()
         isRegistrationScanning = false
+    }
+
+    /// 指定したIDのデバイスがPavlokかどうか確認する（接続 → サービス検出 → 即切断）
+    func verifyAsPavlok(peripheralId: String) async throws {
+        try await connect(registeredPeripheralId: peripheralId)
+        // 接続成功 = Pavlokサービスとキャラクタリスティックが見つかった証拠
+        disconnect()
     }
 
     /// Zap を送信する（最大 `count` 回、`interval` 秒間隔）
@@ -197,15 +205,19 @@ extension PavlokService: CBCentralManagerDelegate {
         Task { @MainActor in
             print("[PavlokService] Discovered: \(peripheral.name ?? "Unknown") (\(peripheral.identifier.uuidString))")
 
-            // 登録スキャン中の場合は名前フィルター後にリストに追加するだけ
+            // 登録スキャン中の場合はすべてのデバイスをリストに追加（RSSIでソート）
             if self.isRegistrationScanning {
                 let id = peripheral.identifier.uuidString
-                let name = peripheral.name ?? ""
-                // "Pavlok" を含む名前のデバイスのみ（大文字小文字不問）
-                guard name.lowercased().contains("pavlok") else { return }
-                if !self.discoveredPeripherals.contains(where: { $0.id == id }) {
-                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name))
+                let name = peripheral.name ?? "不明なデバイス"
+                let rssi = RSSI.intValue
+                if let idx = self.discoveredPeripherals.firstIndex(where: { $0.id == id }) {
+                    // 既存エントリのRSSIを更新
+                    self.discoveredPeripherals[idx] = DiscoveredPeripheral(id: id, name: name, rssi: rssi)
+                } else {
+                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name, rssi: rssi))
                 }
+                // 電波が強い順（近い順）にソート
+                self.discoveredPeripherals.sort { $0.rssi > $1.rssi }
                 return
             }
 
@@ -329,6 +341,15 @@ extension PavlokService: CBPeripheralDelegate {
 struct DiscoveredPeripheral: Identifiable {
     let id: String
     let name: String
+    var rssi: Int  // dBm。0に近いほど電波が強い（近い）
+
+    var rssiLabel: String {
+        switch rssi {
+        case -50...:   return "電波強 ▶▶▶"
+        case -70..<(-50): return "電波中 ▶▶"
+        default:       return "電波弱 ▶"
+        }
+    }
 }
 
 // MARK: - PavlokError

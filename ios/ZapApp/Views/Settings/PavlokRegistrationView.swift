@@ -6,6 +6,7 @@ struct PavlokRegistrationView: View {
 
     @State private var isScanning: Bool = false
     @State private var isSaving: Bool = false
+    @State private var isVerifying: Bool = false
     @State private var errorMessage: String? = nil
     @State private var successMessage: String? = nil
 
@@ -76,9 +77,14 @@ struct PavlokRegistrationView: View {
                 // 見つかったデバイス一覧
                 if !pavlokService.discoveredPeripherals.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("見つかったデバイス")
-                            .font(.headline)
-                            .padding(.horizontal)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("見つかったデバイス (\(pavlokService.discoveredPeripherals.count)台)")
+                                .font(.headline)
+                            Text("Pavlokに近づいて、一番電波が強いデバイスを選んでください")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal)
 
                         ForEach(pavlokService.discoveredPeripherals, id: \.id) { device in
                             Button {
@@ -95,10 +101,18 @@ struct PavlokRegistrationView: View {
                                         Text(device.id.prefix(8) + "...")
                                             .font(.caption.monospaced())
                                             .foregroundStyle(.secondary)
+                                        Text(device.rssiLabel)
+                                            .font(.caption2)
+                                            .foregroundStyle(.blue)
                                     }
                                     Spacer()
-                                    if isSaving {
-                                        ProgressView()
+                                    if isSaving || isVerifying {
+                                        VStack(spacing: 2) {
+                                            ProgressView()
+                                            Text(isVerifying ? "確認中..." : "保存中...")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
                                     } else {
                                         Text("登録")
                                             .font(.subheadline.bold())
@@ -109,7 +123,7 @@ struct PavlokRegistrationView: View {
                                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                                 .padding(.horizontal)
                             }
-                            .disabled(isSaving)
+                            .disabled(isSaving || isVerifying)
                         }
                     }
                 }
@@ -147,18 +161,35 @@ struct PavlokRegistrationView: View {
     }
 
     private func registerDevice(id: String, name: String) async {
-        isSaving = true
         errorMessage = nil
-        defer { isSaving = false }
+        successMessage = nil
+        pavlokService.stopRegistrationScan()
+        isScanning = false
 
+        // Step 1: 接続してPavlokか確認（先に検証してからサーバー保存）
+        isVerifying = true
+        do {
+            try await pavlokService.verifyAsPavlok(peripheralId: id)
+        } catch PavlokError.serviceNotFound, PavlokError.characteristicNotFound {
+            isVerifying = false
+            errorMessage = "このデバイスはPavlokではありません。Pavlokに近づいて別のデバイスを選んでください。"
+            return
+        } catch {
+            isVerifying = false
+            errorMessage = "Pavlokへの接続を確認できませんでした。Pavlokの電源を確認して再試行してください。（\(error.localizedDescription)）"
+            return
+        }
+        isVerifying = false
+
+        // Step 2: 確認できたらサーバーに保存
+        isSaving = true
+        defer { isSaving = false }
         do {
             try await APIClient.shared.savePavlokPeripheralId(id)
             appState.pavlokPeripheralId = id
-            pavlokService.stopRegistrationScan()
-            isScanning = false
-            successMessage = "「\(name)」を登録しました"
+            successMessage = "✓ Pavlokを確認しました！「\(name)」を登録しました"
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "保存に失敗しました: \(error.localizedDescription)"
         }
     }
 }
