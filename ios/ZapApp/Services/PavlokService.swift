@@ -243,7 +243,11 @@ extension PavlokService: CBCentralManagerDelegate {
                     displayName = localName ?? peripheral.name ?? "不明なデバイス"
                 }
 
-                print("[PavlokService] Scan: \(displayName) (\(id)) RSSI=\(rssi) isPavlok=\(isPavlok)")
+                // 全デバイスの詳細ログ（Pavlok特定のデバッグ用）
+                let serviceUUIDs = advertisedServices.map { $0.uuidString }.joined(separator: ", ")
+                let mfrData = (advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data)
+                    .map { $0.map { String(format: "%02X", $0) }.joined() } ?? "none"
+                print("[PavlokService] SCAN name='\(displayName)' localName='\(localName ?? "nil")' id=\(id) rssi=\(rssi) services=[\(serviceUUIDs)] mfr=\(mfrData)")
 
                 if let idx = self.discoveredPeripherals.firstIndex(where: { $0.id == id }) {
                     self.discoveredPeripherals[idx] = DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok)
