@@ -384,6 +384,112 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
 });
 
 // ──────────────────────────────────────────────
+// DELETE /tasks/:taskId  — タスク削除（割り当てられたControllerのみ）
+// ──────────────────────────────────────────────
+router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { userId: controllerUserId } = req.user!;
+  const { taskId } = req.params;
+
+  console.log(`[DELETE /tasks/:taskId] controllerUserId=${controllerUserId} taskId=${taskId}`);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const taskResult = await client.query<TaskRow>(
+      `SELECT * FROM tasks WHERE id = $1`,
+      [taskId]
+    );
+
+    if (taskResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      console.warn(`[DELETE /tasks/:taskId] Not found: taskId=${taskId}`);
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    const task = taskResult.rows[0];
+
+    // 割り当てられたControllerのみ削除可能
+    if (task.controller_user_id !== controllerUserId) {
+      await client.query('ROLLBACK');
+      console.warn(`[DELETE /tasks/:taskId] Forbidden: assigned=${task.controller_user_id} requester=${controllerUserId}`);
+      res.status(403).json({ error: 'Only the assigned controller can delete this task' });
+      return;
+    }
+
+    // アクティブなrelationship確認
+    const relResult = await client.query(
+      `SELECT id FROM relationships
+       WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
+      [task.owner_user_id, controllerUserId]
+    );
+
+    if (relResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      console.warn(`[DELETE /tasks/:taskId] No active relationship: owner=${task.owner_user_id} controller=${controllerUserId}`);
+      res.status(403).json({ error: 'No active relationship' });
+      return;
+    }
+
+    // 関連するzap_requestsを削除
+    await client.query(`DELETE FROM zap_requests WHERE task_id = $1`, [taskId]);
+
+    // タスク削除
+    await client.query(`DELETE FROM tasks WHERE id = $1`, [taskId]);
+
+    await client.query('COMMIT');
+    console.log(`[DELETE /tasks/:taskId] Deleted taskId=${taskId} by controller=${controllerUserId}`);
+
+    res.json({ ok: true });
+
+    // Ownerへプッシュ通知（レスポンス後に非同期）
+    try {
+      const controllerResult = await pool.query<{ display_name: string }>(
+        `SELECT display_name FROM users WHERE id = $1`,
+        [controllerUserId]
+      );
+      const controllerName = controllerResult.rows[0]?.display_name || '監視者';
+
+      const devicesResult = await pool.query<DeviceRow>(
+        `SELECT * FROM devices WHERE user_id = $1`,
+        [task.owner_user_id]
+      );
+      console.log(`[DELETE /tasks/:taskId] Sending push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`);
+
+      const pushPromises = devicesResult.rows.map((device) =>
+        admin.messaging().send({
+          token: device.push_token,
+          notification: {
+            title: 'タスクが削除されました',
+            body: `${controllerName}さんが「${task.title}」を削除しました`,
+          },
+          apns: {
+            payload: {
+              aps: { sound: 'default' },
+              type: 'task_deleted',
+            },
+          },
+        }).catch((pushErr) => {
+          console.error(`[DELETE /tasks/:taskId] Push failed for device ${device.id}:`, pushErr);
+        })
+      );
+
+      await Promise.all(pushPromises);
+      console.log(`[DELETE /tasks/:taskId] Notified owner=${task.owner_user_id} about deletion`);
+    } catch (pushErr) {
+      console.error('[DELETE /tasks/:taskId] Push notification error:', pushErr);
+    }
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[DELETE /tasks/:taskId] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
+// ──────────────────────────────────────────────
 // GET /tasks/:taskId/latest_zap_request  — 最新zap_request取得
 // ──────────────────────────────────────────────
 router.get('/:taskId/latest_zap_request', async (req: AuthRequest, res: Response): Promise<void> => {

@@ -221,6 +221,11 @@ final class APIClient {
         return try await perform(req)
     }
 
+    func deleteTask(taskId: String) async throws {
+        let req = try await authorizedRequest(path: "/tasks/\(taskId)", method: "DELETE")
+        try await performVoid(req)
+    }
+
     func sendZap(taskId: String) async throws -> ZapResponse {
         let req = try await authorizedRequest(path: "/tasks/\(taskId)/zap", method: "POST")
         return try await perform(req)

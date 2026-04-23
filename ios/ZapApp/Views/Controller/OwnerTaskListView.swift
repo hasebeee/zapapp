@@ -11,6 +11,9 @@ struct OwnerTaskListView: View {
     @State private var taskToZap: AppTask? = nil
     @State private var isZapping: Bool = false
     @State private var zapNotStartedTaskId: String? = nil
+    @State private var showDeleteAlert: Bool = false
+    @State private var taskToDelete: AppTask? = nil
+    @State private var isDeleting: Bool = false
 
     var body: some View {
         Group {
@@ -51,6 +54,18 @@ struct OwnerTaskListView: View {
                 Text("「\(task.title)」に Zap を送信します。\n本当に Zap しますか？")
             }
         })
+        .alert("タスクを削除しますか？", isPresented: $showDeleteAlert, actions: {
+            Button("削除する", role: .destructive) {
+                Task { await deleteTask() }
+            }
+            Button("キャンセル", role: .cancel) {
+                taskToDelete = nil
+            }
+        }, message: {
+            if let task = taskToDelete {
+                Text("「\(task.title)」を削除します。\nOwnerに通知が送られます。この操作は取り消せません。")
+            }
+        })
         .task {
             await loadTasks()
         }
@@ -78,10 +93,14 @@ struct OwnerTaskListView: View {
             ControllerTaskCardView(
                 task: task,
                 isZapping: isZapping && taskToZap?.id == task.id,
+                isDeleting: isDeleting && taskToDelete?.id == task.id,
                 showNotStartedWarning: zapNotStartedTaskId == task.id
             ) {
                 taskToZap = task
                 showZapAlert = true
+            } onDelete: {
+                taskToDelete = task
+                showDeleteAlert = true
             }
         }
         .listStyle(.insetGrouped)
@@ -108,7 +127,6 @@ struct OwnerTaskListView: View {
 
         do {
             let response = try await APIClient.shared.sendZap(taskId: task.id)
-            // not_started の場合は警告表示
             if response.zapRequest.status == .notStarted {
                 zapNotStartedTaskId = task.id
             }
@@ -118,6 +136,20 @@ struct OwnerTaskListView: View {
         }
         taskToZap = nil
     }
+
+    private func deleteTask() async {
+        guard let task = taskToDelete else { return }
+        isDeleting = true
+        defer { isDeleting = false }
+
+        do {
+            try await APIClient.shared.deleteTask(taskId: task.id)
+            await loadTasks()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        taskToDelete = nil
+    }
 }
 
 // MARK: - ControllerTaskCardView
@@ -125,8 +157,10 @@ struct OwnerTaskListView: View {
 struct ControllerTaskCardView: View {
     let task: AppTask
     let isZapping: Bool
+    let isDeleting: Bool
     let showNotStartedWarning: Bool
     let onZap: () -> Void
+    let onDelete: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -170,6 +204,27 @@ struct ControllerTaskCardView: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.orange)
+            }
+
+            // 削除ボタン（scheduledのみ）
+            if task.status == .scheduled {
+                Button {
+                    onDelete()
+                } label: {
+                    HStack(spacing: 4) {
+                        if isDeleting {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "trash")
+                            Text("タスクを削除")
+                        }
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                }
+                .buttonStyle(.borderless)
+                .disabled(isDeleting)
             }
         }
         .padding(.vertical, 4)
