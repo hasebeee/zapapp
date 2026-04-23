@@ -91,19 +91,30 @@ struct PavlokRegistrationView: View {
                                 Task { await registerDevice(id: device.id, name: device.name) }
                             } label: {
                                 HStack {
-                                    Image(systemName: "bolt.circle.fill")
-                                        .foregroundStyle(.yellow)
+                                    Image(systemName: device.isPavlok ? "bolt.circle.fill" : "questionmark.circle")
+                                        .foregroundStyle(device.isPavlok ? Color.yellow : Color.secondary)
                                         .font(.title2)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(device.name)
-                                            .font(.body.bold())
-                                            .foregroundStyle(.primary)
+                                        HStack(spacing: 6) {
+                                            Text(device.name)
+                                                .font(.body.bold())
+                                                .foregroundStyle(.primary)
+                                            if device.isPavlok {
+                                                Text("Pavlok")
+                                                    .font(.caption2.bold())
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.yellow.opacity(0.2))
+                                                    .foregroundStyle(Color.orange)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
                                         Text(device.id.prefix(8) + "...")
                                             .font(.caption.monospaced())
                                             .foregroundStyle(.secondary)
                                         Text(device.rssiLabel)
                                             .font(.caption2)
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(device.isPavlok ? Color.orange : Color.blue)
                                     }
                                     Spacer()
                                     if isSaving || isVerifying {
@@ -120,7 +131,11 @@ struct PavlokRegistrationView: View {
                                     }
                                 }
                                 .padding()
-                                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                                .background(device.isPavlok ? AnyShapeStyle(Color.yellow.opacity(0.07)) : AnyShapeStyle(.regularMaterial), in: RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .strokeBorder(device.isPavlok ? Color.orange.opacity(0.4) : Color.clear, lineWidth: 1.5)
+                                )
                                 .padding(.horizontal)
                             }
                             .disabled(isSaving || isVerifying)

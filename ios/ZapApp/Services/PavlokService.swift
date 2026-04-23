@@ -88,13 +88,26 @@ final class PavlokService: NSObject, ObservableObject {
         }
     }
 
-    /// 登録用スキャン開始（見つかったPavlokを discoveredPeripherals に追加）
-    /// withServices: nil で全BLEデバイスをスキャンし、名前でフィルタリングする。
-    /// PavlokはServiceUUIDをアドバタイズパケットに含めないため、UUIDフィルターでは見つからない。
+    /// 登録用スキャン開始
+    /// 1. まずiOSシステムに接続済みのPavlokを即座に取得（公式アプリ経由で接続中ならここで見つかる）
+    /// 2. 追加で全BLEデバイスをスキャンして広告パケットのLocalNameやServiceUUIDでも判別
     func startRegistrationScan() {
         guard centralManager.state == .poweredOn else { return }
         discoveredPeripherals = []
         isRegistrationScanning = true
+
+        // Step 1: システムに既接続のPavlokを検索（公式アプリが繋いでいれば即ヒット）
+        let connected = centralManager.retrieveConnectedPeripherals(withServices: [Self.pavlokServiceUUID])
+        for p in connected {
+            let id = p.identifier.uuidString
+            let name = p.name ?? "Pavlok"
+            if !discoveredPeripherals.contains(where: { $0.id == id }) {
+                discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name, rssi: 0, isPavlok: true))
+            }
+            print("[PavlokService] Found connected Pavlok: \(name) (\(id))")
+        }
+
+        // Step 2: 追加スキャン（まだ見つかっていない場合の補完）
         centralManager.scanForPeripherals(
             withServices: nil,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
@@ -210,19 +223,38 @@ extension PavlokService: CBCentralManagerDelegate {
         Task { @MainActor in
             print("[PavlokService] Discovered: \(peripheral.name ?? "Unknown") (\(peripheral.identifier.uuidString))")
 
-            // 登録スキャン中の場合はすべてのデバイスをリストに追加（RSSIでソート）
+            // 登録スキャン中の場合はリストに追加
             if self.isRegistrationScanning {
                 let id = peripheral.identifier.uuidString
-                let name = peripheral.name ?? "不明なデバイス"
                 let rssi = RSSI.intValue
-                if let idx = self.discoveredPeripherals.firstIndex(where: { $0.id == id }) {
-                    // 既存エントリのRSSIを更新
-                    self.discoveredPeripherals[idx] = DiscoveredPeripheral(id: id, name: name, rssi: rssi)
+
+                // 広告パケットからPavlokか判定
+                let localName = advertisementData[CBAdvertisementDataLocalNameKey] as? String
+                let advertisedServices = advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []
+                let hasPavlokService = advertisedServices.contains(Self.pavlokServiceUUID)
+                let isPavlok = hasPavlokService
+                    || (localName ?? "").lowercased().contains("pavlok")
+                    || (peripheral.name ?? "").lowercased().contains("pavlok")
+
+                let displayName: String
+                if isPavlok {
+                    displayName = localName ?? peripheral.name ?? "Pavlok"
                 } else {
-                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name, rssi: rssi))
+                    displayName = localName ?? peripheral.name ?? "不明なデバイス"
                 }
-                // 電波が強い順（近い順）にソート
-                self.discoveredPeripherals.sort { $0.rssi > $1.rssi }
+
+                print("[PavlokService] Scan: \(displayName) (\(id)) RSSI=\(rssi) isPavlok=\(isPavlok)")
+
+                if let idx = self.discoveredPeripherals.firstIndex(where: { $0.id == id }) {
+                    self.discoveredPeripherals[idx] = DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok)
+                } else {
+                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok))
+                }
+                // Pavlokを上に、次に電波強度順
+                self.discoveredPeripherals.sort {
+                    if $0.isPavlok != $1.isPavlok { return $0.isPavlok }
+                    return $0.rssi > $1.rssi
+                }
                 return
             }
 
@@ -346,11 +378,13 @@ extension PavlokService: CBPeripheralDelegate {
 struct DiscoveredPeripheral: Identifiable {
     let id: String
     let name: String
-    var rssi: Int  // dBm。0に近いほど電波が強い（近い）
+    var rssi: Int       // dBm。0に近いほど電波が強い（近い）
+    var isPavlok: Bool  // Pavlokと判定されたか
 
     var rssiLabel: String {
-        if rssi >= -50 { return "電波強 ▶▶▶" }
-        if rssi >= -70 { return "電波中 ▶▶" }
+        if rssi == 0    { return "接続済み" }
+        if rssi >= -65  { return "電波強 ▶▶▶" }
+        if rssi >= -80  { return "電波中 ▶▶" }
         return "電波弱 ▶"
     }
 }
