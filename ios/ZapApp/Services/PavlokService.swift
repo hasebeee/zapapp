@@ -38,6 +38,8 @@ final class PavlokService: NSObject, ObservableObject {
     private var isRegistrationScanning: Bool = false
     /// 接続先として指定されたperipheral UUID
     private var targetPeripheralId: String? = nil
+    /// 検証モード（接続確立のみ確認、サービス探索しない）
+    private var isVerificationMode: Bool = false
 
     // MARK: - Init
 
@@ -120,11 +122,45 @@ final class PavlokService: NSObject, ObservableObject {
         isRegistrationScanning = false
     }
 
-    /// 指定したIDのデバイスがPavlokかどうか確認する（接続 → サービス検出 → 即切断）
+    /// 指定したIDのデバイスに接続できるか確認する（接続成功したら即切断）
+    /// サービスUUIDは検証しない（Pavlokの正確なUUIDが不明なため）
     func verifyAsPavlok(peripheralId: String) async throws {
-        try await connect(registeredPeripheralId: peripheralId)
-        // 接続成功 = Pavlokサービスとキャラクタリスティックが見つかった証拠
+        try await connectForVerification(registeredPeripheralId: peripheralId)
         disconnect()
+    }
+
+    /// 検証専用の接続（サービス探索なしで接続確立のみ確認）
+    private func connectForVerification(registeredPeripheralId: String) async throws {
+        guard centralManager.state == .poweredOn else {
+            throw PavlokError.bluetoothUnavailable
+        }
+        connectionState = .scanning
+        lastError = nil
+        targetPeripheralId = registeredPeripheralId
+        isVerificationMode = true
+
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            self.connectContinuation = cont
+            self.centralManager.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])
+
+            Task.detached {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                await MainActor.run {
+                    guard self.connectContinuation != nil else { return }
+                    self.centralManager.stopScan()
+                    if let p = self.peripheral {
+                        self.centralManager.cancelPeripheralConnection(p)
+                        self.peripheral = nil
+                    }
+                    let error = PavlokError.scanTimeout
+                    self.connectContinuation?.resume(throwing: error)
+                    self.connectContinuation = nil
+                    self.connectionState = .error
+                    self.lastError = error.localizedDescription
+                    self.targetPeripheralId = nil
+                }
+            }
+        }
     }
 
     /// Zap を送信する（最大 `count` 回、`interval` 秒間隔）
@@ -164,6 +200,7 @@ final class PavlokService: NSObject, ObservableObject {
         }
         peripheral = nil
         zapCharacteristic = nil
+        isVerificationMode = false
         connectionState = .disconnected
     }
 
@@ -280,7 +317,16 @@ extension PavlokService: CBCentralManagerDelegate {
                                     didConnect peripheral: CBPeripheral) {
         Task { @MainActor in
             print("[PavlokService] Connected: \(peripheral.name ?? "Unknown")")
-            peripheral.discoverServices([Self.pavlokServiceUUID])
+            if self.isVerificationMode {
+                // 検証モード: 接続できたことだけ確認してOK
+                self.isVerificationMode = false
+                self.connectionState = .connected
+                self.connectContinuation?.resume()
+                self.connectContinuation = nil
+                self.targetPeripheralId = nil
+            } else {
+                peripheral.discoverServices([Self.pavlokServiceUUID])
+            }
         }
     }
 

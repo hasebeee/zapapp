@@ -187,13 +187,9 @@ struct PavlokRegistrationView: View {
         isVerifying = true
         do {
             try await pavlokService.verifyAsPavlok(peripheralId: id)
-        } catch PavlokError.serviceNotFound, PavlokError.characteristicNotFound {
-            isVerifying = false
-            errorMessage = "このデバイスはPavlokではありません。Pavlokに近づいて別のデバイスを選んでください。"
-            return
         } catch {
             isVerifying = false
-            errorMessage = "Pavlokへの接続を確認できませんでした。Pavlokの電源を確認して再試行してください。（\(error.localizedDescription)）"
+            errorMessage = "デバイスへの接続に失敗しました。デバイスの電源を確認して再試行してください。（\(error.localizedDescription)）"
             return
         }
         isVerifying = false
@@ -204,7 +200,7 @@ struct PavlokRegistrationView: View {
         do {
             try await APIClient.shared.savePavlokPeripheralId(id)
             appState.pavlokPeripheralId = id
-            successMessage = "✓ Pavlokを確認しました！「\(name)」を登録しました"
+            successMessage = "✓ 登録しました！実際にZapを送って動作を確認してください"
         } catch {
             errorMessage = "保存に失敗しました: \(error.localizedDescription)"
         }
