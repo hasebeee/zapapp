@@ -110,12 +110,15 @@ struct PavlokRegistrationView: View {
                                                     .clipShape(Capsule())
                                             }
                                         }
-                                        Text(device.id.prefix(8) + "...")
+                                        Text(device.id.prefix(13) + "...")
                                             .font(.caption.monospaced())
                                             .foregroundStyle(.secondary)
-                                        Text(device.rssiLabel)
-                                            .font(.caption2)
-                                            .foregroundStyle(device.isPavlok ? Color.orange : Color.blue)
+                                        HStack(spacing: 6) {
+                                            Text(device.rssiLabel)
+                                            Text("検出\(device.seenCount)回")
+                                        }
+                                        .font(.caption2)
+                                        .foregroundStyle(device.isPavlok ? Color.orange : Color.blue)
                                     }
                                     Spacer()
                                     if isSaving || isVerifying {

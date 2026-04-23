@@ -104,7 +104,7 @@ final class PavlokService: NSObject, ObservableObject {
             let id = p.identifier.uuidString
             let name = p.name ?? "Pavlok"
             if !discoveredPeripherals.contains(where: { $0.id == id }) {
-                discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name, rssi: 0, isPavlok: true))
+                discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name, rssi: 0, isPavlok: true, seenCount: 999))
             }
             print("[PavlokService] Found connected Pavlok: \(name) (\(id))")
         }
@@ -287,13 +287,15 @@ extension PavlokService: CBCentralManagerDelegate {
                 print("[PavlokService] SCAN name='\(displayName)' localName='\(localName ?? "nil")' id=\(id) rssi=\(rssi) services=[\(serviceUUIDs)] mfr=\(mfrData)")
 
                 if let idx = self.discoveredPeripherals.firstIndex(where: { $0.id == id }) {
-                    self.discoveredPeripherals[idx] = DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok)
+                    let prev = self.discoveredPeripherals[idx]
+                    self.discoveredPeripherals[idx] = DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok, seenCount: prev.seenCount + 1)
                 } else {
-                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok))
+                    self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: displayName, rssi: rssi, isPavlok: isPavlok, seenCount: 1))
                 }
-                // Pavlokを上に、次に電波強度順
+                // Pavlok判定済み → 出現回数多い順 → 電波強度順
                 self.discoveredPeripherals.sort {
                     if $0.isPavlok != $1.isPavlok { return $0.isPavlok }
+                    if $0.seenCount != $1.seenCount { return $0.seenCount > $1.seenCount }
                     return $0.rssi > $1.rssi
                 }
                 return
@@ -430,6 +432,7 @@ struct DiscoveredPeripheral: Identifiable {
     let name: String
     var rssi: Int       // dBm。0に近いほど電波が強い（近い）
     var isPavlok: Bool  // Pavlokと判定されたか
+    var seenCount: Int  // 発見された回数（多いほど積極的にアドバタイズ中）
 
     var rssiLabel: String {
         if rssi == 0    { return "接続済み" }
