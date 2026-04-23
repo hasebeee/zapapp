@@ -83,12 +83,14 @@ final class PavlokService: NSObject, ObservableObject {
     }
 
     /// 登録用スキャン開始（見つかったPavlokを discoveredPeripherals に追加）
+    /// withServices: nil で全BLEデバイスをスキャンし、名前でフィルタリングする。
+    /// PavlokはServiceUUIDをアドバタイズパケットに含めないため、UUIDフィルターでは見つからない。
     func startRegistrationScan() {
         guard centralManager.state == .poweredOn else { return }
         discoveredPeripherals = []
         isRegistrationScanning = true
         centralManager.scanForPeripherals(
-            withServices: [Self.pavlokServiceUUID],
+            withServices: nil,
             options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
         )
     }
@@ -195,10 +197,12 @@ extension PavlokService: CBCentralManagerDelegate {
         Task { @MainActor in
             print("[PavlokService] Discovered: \(peripheral.name ?? "Unknown") (\(peripheral.identifier.uuidString))")
 
-            // 登録スキャン中の場合はリストに追加するだけ
+            // 登録スキャン中の場合は名前フィルター後にリストに追加するだけ
             if self.isRegistrationScanning {
                 let id = peripheral.identifier.uuidString
-                let name = peripheral.name ?? "Pavlok"
+                let name = peripheral.name ?? ""
+                // "Pavlok" を含む名前のデバイスのみ（大文字小文字不問）
+                guard name.lowercased().contains("pavlok") else { return }
                 if !self.discoveredPeripherals.contains(where: { $0.id == id }) {
                     self.discoveredPeripherals.append(DiscoveredPeripheral(id: id, name: name))
                 }
