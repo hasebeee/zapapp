@@ -50,19 +50,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         print("[AppDelegate] Failed to register for remote notifications: \(error)")
     }
 
-    // MARK: - バックグラウンド Silent Push 受信 → ZapRequestPoller 起動
-
-    func application(
-        _ application: UIApplication,
-        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
-        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
-    ) {
-        print("[AppDelegate] Silent push received, starting poller")
-        Task { @MainActor in
-            ZapRequestPoller.shared.start()
-        }
-        completionHandler(.newData)
-    }
 }
 
 // MARK: - UNUserNotificationCenterDelegate
@@ -79,13 +66,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         print("[AppDelegate] Notification tapped: \(userInfo)")
 
         // Zap通知タップ時はポーラーを即座に起動
-        if userInfo["zapRequestId"] != nil {
-            print("[AppDelegate] Zap notification tapped, starting poller immediately")
-            Task { @MainActor in
-                ZapRequestPoller.shared.start()
-            }
-        }
-
         completionHandler()
     }
 

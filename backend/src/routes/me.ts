@@ -31,33 +31,6 @@ router.get('/profile', async (req: AuthRequest, res: Response): Promise<void> =>
 });
 
 // ──────────────────────────────────────────────
-// PUT /me/pavlok  — PavlokのperipheralIDを登録
-// ──────────────────────────────────────────────
-router.put('/pavlok', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { userId } = req.user!;
-  const { pavlok_peripheral_id } = req.body as { pavlok_peripheral_id?: string };
-
-  console.log(`[PUT /me/pavlok] userId=${userId} peripheralId=${pavlok_peripheral_id ?? 'none'}`);
-
-  if (!pavlok_peripheral_id) {
-    res.status(400).json({ error: 'pavlok_peripheral_id is required' });
-    return;
-  }
-
-  try {
-    await pool.query(
-      `UPDATE users SET pavlok_peripheral_id = $1 WHERE id = $2`,
-      [pavlok_peripheral_id, userId]
-    );
-    console.log(`[PUT /me/pavlok] Saved peripheralId=${pavlok_peripheral_id} for userId=${userId}`);
-    res.json({ pavlok_peripheral_id });
-  } catch (err) {
-    console.error('[PUT /me/pavlok] Error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ──────────────────────────────────────────────
 // POST /me/pavlok/token  — PavlokアカウントでログインしてJWTをDB保存
 // ──────────────────────────────────────────────
 router.post('/pavlok/token', async (req: AuthRequest, res: Response): Promise<void> => {

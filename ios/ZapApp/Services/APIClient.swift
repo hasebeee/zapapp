@@ -132,11 +132,6 @@ final class APIClient {
         return try await perform(req)
     }
 
-    func savePavlokPeripheralId(_ peripheralId: String) async throws {
-        let req = try await authorizedRequest(path: "/me/pavlok", method: "PUT")
-        try await performVoid(req, body: ["pavlok_peripheral_id": peripheralId])
-    }
-
     func connectPavlok(email: String, password: String) async throws {
         let req = try await authorizedRequest(path: "/me/pavlok/token", method: "POST")
         try await performVoid(req, body: ["email": email, "password": password])
@@ -255,42 +250,6 @@ final class APIClient {
         }
         let req = try await authorizedRequest(path: "/me/zap_requests", queryItems: queryItems)
         return try await perform(req)
-    }
-
-    func startZapRequest(id: String) async throws {
-        let req = try await authorizedRequest(path: "/zap_requests/\(id)/start", method: "POST")
-        try await performVoid(req)
-    }
-
-    func resultZapRequest(id: String,
-                          attemptedZaps: Int,
-                          succeededZaps: Int,
-                          lastErrorCode: String?,
-                          lastErrorMessage: String?) async throws {
-        let req = try await authorizedRequest(path: "/zap_requests/\(id)/result", method: "POST")
-        var body: [String: Any] = [
-            "attempted_zaps": attemptedZaps,
-            "succeeded_zaps": succeededZaps
-        ]
-        if let code = lastErrorCode { body["last_error_code"] = code }
-        if let msg = lastErrorMessage { body["last_error_message"] = msg }
-        let data = try JSONSerialization.data(withJSONObject: body)
-        var mutableReq = req
-        mutableReq.httpBody = data
-        try await performVoid(mutableReq)
-    }
-
-    func notStartedZapRequest(id: String,
-                              lastErrorCode: String,
-                              lastErrorMessage: String?) async throws {
-        let req = try await authorizedRequest(path: "/zap_requests/\(id)/not_started",
-                                              method: "POST")
-        var body: [String: Any] = ["last_error_code": lastErrorCode]
-        if let msg = lastErrorMessage { body["last_error_message"] = msg }
-        let data = try JSONSerialization.data(withJSONObject: body)
-        var mutableReq = req
-        mutableReq.httpBody = data
-        try await performVoid(mutableReq)
     }
 
     // MARK: - Gift APIs

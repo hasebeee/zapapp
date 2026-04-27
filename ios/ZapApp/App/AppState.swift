@@ -27,9 +27,6 @@ final class AppState: ObservableObject {
     /// DB上のPostgreSQL UUID
     @Published var dbUserId: String? = nil
 
-    /// 登録済みPavlokのperipheral UUID
-    @Published var pavlokPeripheralId: String? = nil
-
     /// PavlokアカウントAPI連携済みか
     @Published var pavlokConnected: Bool = false
 
@@ -49,12 +46,10 @@ final class AppState: ObservableObject {
                     // DBのUUIDとPavlok登録情報を取得
                     if let profile = try? await APIClient.shared.getMyProfile() {
                         self?.dbUserId = profile.id
-                        self?.pavlokPeripheralId = profile.pavlokPeripheralId
                         self?.pavlokConnected = profile.pavlokConnected
                     }
                 } else {
                     self?.dbUserId = nil
-                    self?.pavlokPeripheralId = nil
                     self?.pavlokConnected = false
                 }
             }

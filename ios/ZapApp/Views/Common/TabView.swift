@@ -5,7 +5,6 @@ import SwiftUI
 /// タブ2: 監視する（他人 side）
 struct MainTabView: View {
     @EnvironmentObject private var appState: AppState
-    @ObservedObject private var poller = ZapRequestPoller.shared
 
     var body: some View {
         TabView {
@@ -28,16 +27,6 @@ struct MainTabView: View {
                 .tabItem {
                     Label("設定", systemImage: "gearshape")
                 }
-        }
-        .onAppear {
-            ZapRequestPoller.shared.registeredPeripheralId = appState.pavlokPeripheralId
-            ZapRequestPoller.shared.start()
-        }
-        .onChange(of: appState.pavlokPeripheralId) { newId in
-            ZapRequestPoller.shared.registeredPeripheralId = newId
-        }
-        .onDisappear {
-            ZapRequestPoller.shared.stop()
         }
     }
 }

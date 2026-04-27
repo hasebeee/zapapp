@@ -357,6 +357,10 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
         });
         if (pavlokRes.ok) {
           console.log(`[POST /tasks/:taskId/zap] Pavlok API zap sent successfully for owner=${task.owner_user_id}`);
+          await pool.query(
+            `UPDATE zap_requests SET status = 'executed', attempted_zaps = 1, succeeded_zaps = 1 WHERE id = $1`,
+            [zapRequest.id]
+          );
         } else {
           const errText = await pavlokRes.text();
           console.warn(`[POST /tasks/:taskId/zap] Pavlok API zap failed: ${pavlokRes.status} ${errText}`);
