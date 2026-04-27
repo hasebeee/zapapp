@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS controller_user_id UUID REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS pavlok_peripheral_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pavlok_token TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_tasks_owner ON tasks(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);

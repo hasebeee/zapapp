@@ -30,6 +30,9 @@ final class AppState: ObservableObject {
     /// 登録済みPavlokのperipheral UUID
     @Published var pavlokPeripheralId: String? = nil
 
+    /// PavlokアカウントAPI連携済みか
+    @Published var pavlokConnected: Bool = false
+
     // MARK: - Private
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
@@ -47,10 +50,12 @@ final class AppState: ObservableObject {
                     if let profile = try? await APIClient.shared.getMyProfile() {
                         self?.dbUserId = profile.id
                         self?.pavlokPeripheralId = profile.pavlokPeripheralId
+                        self?.pavlokConnected = profile.pavlokConnected
                     }
                 } else {
                     self?.dbUserId = nil
                     self?.pavlokPeripheralId = nil
+                    self?.pavlokConnected = false
                 }
             }
         }

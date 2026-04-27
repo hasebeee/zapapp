@@ -337,6 +337,38 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
     await client.query('COMMIT');
     console.log(`[POST /tasks/:taskId/zap] ZapRequest created id=${zapRequest.id} taskId=${taskId} owner=${task.owner_user_id}`);
 
+    // オーナーのPavlok APIトークンがあればZapを送信
+    try {
+      const pavlokResult = await pool.query<{ pavlok_token: string | null }>(
+        `SELECT pavlok_token FROM users WHERE id = $1`,
+        [task.owner_user_id]
+      );
+      const pavlokToken = pavlokResult.rows[0]?.pavlok_token;
+
+      if (pavlokToken) {
+        console.log(`[POST /tasks/:taskId/zap] Sending Pavlok API zap for owner=${task.owner_user_id}`);
+        const pavlokRes = await fetch('https://api.pavlok.com/api/v5/stimulus/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${pavlokToken}`,
+          },
+          body: JSON.stringify({ stimulus: { type: 'zap', value: 50 } }),
+        });
+        if (pavlokRes.ok) {
+          console.log(`[POST /tasks/:taskId/zap] Pavlok API zap sent successfully for owner=${task.owner_user_id}`);
+        } else {
+          const errText = await pavlokRes.text();
+          console.warn(`[POST /tasks/:taskId/zap] Pavlok API zap failed: ${pavlokRes.status} ${errText}`);
+        }
+      } else {
+        console.log(`[POST /tasks/:taskId/zap] No Pavlok token for owner=${task.owner_user_id}, skipping Pavlok zap`);
+      }
+    } catch (pavlokErr) {
+      console.error('[POST /tasks/:taskId/zap] Pavlok API error:', pavlokErr);
+      // Pavlok失敗はクリティカルではないので続行
+    }
+
     // オーナーの全デバイスへアラート+サイレントpush送信
     try {
       const devicesResult = await pool.query<DeviceRow>(

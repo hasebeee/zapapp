@@ -5,7 +5,7 @@ struct SettingsView: View {
 
     @State private var showLogoutConfirm = false
     @State private var showInvite = false
-    @State private var showPavlokRegistration = false
+    @State private var showPavlokConnect = false
 
     var body: some View {
         NavigationStack {
@@ -46,21 +46,22 @@ struct SettingsView: View {
                     Text("つながり")
                 }
 
-                // Pavlok設定
+                // Pavlok連携
                 Section {
                     Button {
-                        showPavlokRegistration = true
+                        showPavlokConnect = true
                     } label: {
                         HStack {
-                            Image(systemName: "bolt.circle")
+                            Image(systemName: "bolt.circle.fill")
+                                .foregroundStyle(appState.pavlokConnected ? AnyShapeStyle(.yellow) : AnyShapeStyle(.secondary))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Pavlokを登録する")
-                                if let id = appState.pavlokPeripheralId {
-                                    Text("登録済み: \(id.prefix(8))...")
-                                        .font(.caption.monospaced())
-                                        .foregroundStyle(.secondary)
+                                Text("Pavlokアカウント連携")
+                                if appState.pavlokConnected {
+                                    Text("連携済み（Zapを受け取れます）")
+                                        .font(.caption)
+                                        .foregroundStyle(.green)
                                 } else {
-                                    Text("未登録")
+                                    Text("未連携")
                                         .font(.caption)
                                         .foregroundStyle(.orange)
                                 }
@@ -69,7 +70,7 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                     }
                 } header: {
-                    Text("デバイス")
+                    Text("Pavlok連携")
                 }
 
                 // ログアウト
@@ -87,8 +88,8 @@ struct SettingsView: View {
             .sheet(isPresented: $showInvite) {
                 InviteView()
             }
-            .sheet(isPresented: $showPavlokRegistration) {
-                PavlokRegistrationView()
+            .sheet(isPresented: $showPavlokConnect) {
+                PavlokConnectView()
             }
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)

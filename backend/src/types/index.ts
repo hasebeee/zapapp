@@ -22,6 +22,7 @@ export interface UserRow {
   created_at: Date;
   last_login_at: Date;
   pavlok_peripheral_id: string | null;
+  pavlok_token: string | null;
 }
 
 export interface DeviceRow {

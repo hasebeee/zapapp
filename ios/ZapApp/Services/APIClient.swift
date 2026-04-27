@@ -137,6 +137,16 @@ final class APIClient {
         try await performVoid(req, body: ["pavlok_peripheral_id": peripheralId])
     }
 
+    func connectPavlok(email: String, password: String) async throws {
+        let req = try await authorizedRequest(path: "/me/pavlok/token", method: "POST")
+        try await performVoid(req, body: ["email": email, "password": password])
+    }
+
+    func disconnectPavlok() async throws {
+        let req = try await authorizedRequest(path: "/me/pavlok/token", method: "DELETE")
+        try await performVoid(req)
+    }
+
     // MARK: - Invite APIs
 
     func createInvite(inviteeEmail: String) async throws -> InviteResponse {
