@@ -20,7 +20,7 @@ struct OwnerTaskListView: View {
             if isLoading && tasks.isEmpty {
                 ProgressView("読み込み中...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if tasks.isEmpty {
+            } else if activeTasks.isEmpty {
                 emptyView
             } else {
                 taskList
@@ -88,8 +88,13 @@ struct OwnerTaskListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    // 完了済みは履歴タブで表示するため除外
+    private var activeTasks: [AppTask] {
+        tasks.filter { $0.status != .closed }
+    }
+
     private var taskList: some View {
-        List(tasks) { task in
+        List(activeTasks) { task in
             ControllerTaskCardView(
                 task: task,
                 isZapping: isZapping && taskToZap?.id == task.id,
