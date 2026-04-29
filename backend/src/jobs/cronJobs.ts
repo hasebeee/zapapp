@@ -163,6 +163,7 @@ async function sendReminderNotifications(): Promise<void> {
       `UPDATE tasks
        SET reminder_sent_at = NOW()
        WHERE status = 'scheduled'
+         AND reminder_minutes > 0
          AND reminder_sent_at IS NULL
          AND due_at > NOW()
          AND due_at <= NOW() + (reminder_minutes * interval '1 minute')

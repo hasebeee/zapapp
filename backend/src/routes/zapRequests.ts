@@ -61,7 +61,8 @@ router.post('/:id/ack', async (req: AuthRequest, res: Response): Promise<void> =
 
     const zapRequest = result.rows[0];
 
-    if (zapRequest.status !== 'executed' && zapRequest.status !== 'created') {
+    // executedのみACK可能（Pavlok未実行のcreatedは不可）
+    if (zapRequest.status !== 'executed') {
       await client.query('ROLLBACK');
       console.warn(`[POST /zap_requests/:id/ack] Cannot ack: status=${zapRequest.status} id=${id}`);
       res.status(400).json({ error: `Cannot ack: zap_request status is ${zapRequest.status}` });
