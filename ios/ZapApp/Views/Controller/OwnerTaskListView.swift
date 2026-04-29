@@ -206,11 +206,11 @@ struct ControllerTaskCardView: View {
                     .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             }
 
-            // waitingAck: 感電報告待ちと残り時間
+            // waitingAck: 未報告と残り時間
             if task.status == .waitingAck {
                 HStack(spacing: 4) {
                     Image(systemName: "hourglass")
-                    Text("感電報告待ち")
+                    Text("未報告")
                 }
                 .font(.caption)
                 .foregroundStyle(.orange)
@@ -280,7 +280,7 @@ struct ControllerTaskCardView: View {
                 .background(.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
 
         case .waitingAck:
-            Text("感電報告待ち")
+            Text("未報告")
                 .font(.caption)
                 .foregroundStyle(.orange)
                 .padding(.horizontal, 10)
