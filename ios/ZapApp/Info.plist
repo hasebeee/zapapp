@@ -40,17 +40,9 @@
     <key>CFBundleVersion</key>
     <string>1</string>
 
-    <!-- Bluetooth 使用許可説明 -->
-    <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>ZapApp はバックグラウンドで Pavlok デバイスに接続し、Zap を送信するために Bluetooth を使用します。</string>
-    <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>ZapApp は Pavlok デバイスへの接続に Bluetooth を使用します。</string>
-
     <!-- バックグラウンドモード -->
     <key>UIBackgroundModes</key>
     <array>
-        <string>bluetooth-central</string>
-        <string>fetch</string>
         <string>remote-notification</string>
     </array>
 
