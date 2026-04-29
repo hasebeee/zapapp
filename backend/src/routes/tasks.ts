@@ -353,7 +353,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${pavlokToken}`,
           },
-          body: JSON.stringify({ stimulus: { type: 'zap', value: 50 } }),
+          body: JSON.stringify({ stimulus: { stimulusType: 'zap', stimulusValue: 50 } }),
         });
         if (pavlokRes.ok) {
           console.log(`[POST /tasks/:taskId/zap] Pavlok API zap sent successfully for owner=${task.owner_user_id}`);
