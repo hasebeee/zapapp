@@ -11,6 +11,16 @@ struct CreateTaskView: View {
     @State private var isLoading: Bool = false
     @State private var isLoadingRelationships: Bool = false
     @State private var errorMessage: String? = nil
+    @State private var reminderMinutes: Int = 5
+
+    private let reminderOptions: [(label: String, value: Int)] = [
+        ("なし", 0),
+        ("5分前", 5),
+        ("10分前", 10),
+        ("15分前", 15),
+        ("30分前", 30),
+        ("1時間前", 60),
+    ]
 
     private var isFormValid: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty && dueAt > .now && selectedRelationship != nil
@@ -27,6 +37,15 @@ struct CreateTaskView: View {
                                selection: $dueAt,
                                in: Date.now...,
                                displayedComponents: [.date, .hourAndMinute])
+                }
+
+                Section("通知設定") {
+                    Picker("締切前リマインダー", selection: $reminderMinutes) {
+                        ForEach(reminderOptions, id: \.value) { option in
+                            Text(option.label).tag(option.value)
+                        }
+                    }
+                    .pickerStyle(.menu)
                 }
 
                 Section("監視してもらう人") {
@@ -107,7 +126,8 @@ struct CreateTaskView: View {
             _ = try await APIClient.shared.createTask(
                 title: title.trimmingCharacters(in: .whitespaces),
                 dueAt: dueAt,
-                controllerUserId: selectedRelationship?.controllerUserId
+                controllerUserId: selectedRelationship?.controllerUserId,
+                reminderMinutes: reminderMinutes
             )
             dismiss()
         } catch {

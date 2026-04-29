@@ -10,13 +10,16 @@ const router = Router();
 // ──────────────────────────────────────────────
 router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
-  const { title, due_at, controller_user_id } = req.body as {
+  const { title, due_at, controller_user_id, reminder_minutes } = req.body as {
     title?: string;
     due_at?: string;
     controller_user_id?: string;
+    reminder_minutes?: number;
   };
 
-  console.log(`[POST /tasks] userId=${userId} title=${title} due_at=${due_at} controller_user_id=${controller_user_id ?? 'none'}`);
+  const reminderMins = typeof reminder_minutes === 'number' ? reminder_minutes : 5;
+
+  console.log(`[POST /tasks] userId=${userId} title=${title} due_at=${due_at} controller_user_id=${controller_user_id ?? 'none'} reminder_minutes=${reminderMins}`);
 
   if (!title || !due_at || !controller_user_id) {
     res.status(400).json({ error: 'title, due_at and controller_user_id are required' });
@@ -39,10 +42,10 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const result = await pool.query<TaskRow>(
-      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, due_at, created_at, status)
-       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), 'scheduled')
+      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, due_at, created_at, status, reminder_minutes)
+       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), 'scheduled', $5)
        RETURNING *`,
-      [userId, controller_user_id ?? null, title, due_at]
+      [userId, controller_user_id ?? null, title, due_at, reminderMins]
     );
 
     const task = result.rows[0];

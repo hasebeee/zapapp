@@ -281,7 +281,8 @@ struct InfoRow: View {
             dueAt: .now.addingTimeInterval(3600),
             createdAt: .now,
             closedAt: nil,
-            status: .waitingAck
+            status: .waitingAck,
+            reminderMinutes: 5
         ))
     }
 }

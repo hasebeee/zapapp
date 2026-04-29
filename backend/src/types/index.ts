@@ -75,6 +75,8 @@ export interface TaskRow {
   created_at: Date;
   closed_at: Date | null;
   status: TaskStatus;
+  reminder_minutes: number;
+  reminder_sent_at: Date | null;
 }
 
 export type ZapRequestStatus =

@@ -178,18 +178,31 @@ final class APIClient {
 
     // MARK: - Task APIs (Owner)
 
-    func createTask(title: String, dueAt: Date, controllerUserId: String?) async throws -> AppTask {
+    func createTask(title: String, dueAt: Date, controllerUserId: String?, reminderMinutes: Int = 5) async throws -> AppTask {
         let req = try await authorizedRequest(path: "/tasks", method: "POST")
         let isoFormatter = ISO8601DateFormatter()
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        var body: [String: String] = [
-            "title": title,
-            "due_at": isoFormatter.string(from: dueAt)
-        ]
-        if let controllerUserId {
-            body["controller_user_id"] = controllerUserId
-        }
+        let body = CreateTaskBody(
+            title: title,
+            dueAt: isoFormatter.string(from: dueAt),
+            controllerUserId: controllerUserId,
+            reminderMinutes: reminderMinutes
+        )
         return try await perform(req, body: body)
+    }
+
+    private struct CreateTaskBody: Encodable {
+        let title: String
+        let dueAt: String
+        let controllerUserId: String?
+        let reminderMinutes: Int
+
+        enum CodingKeys: String, CodingKey {
+            case title
+            case dueAt            = "due_at"
+            case controllerUserId = "controller_user_id"
+            case reminderMinutes  = "reminder_minutes"
+        }
     }
 
     func getTasks(status: [TaskStatus]? = nil) async throws -> [AppTask] {

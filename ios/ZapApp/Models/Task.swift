@@ -32,6 +32,7 @@ struct AppTask: Codable, Identifiable, Hashable {
     let createdAt: Date
     let closedAt: Date?
     let status: TaskStatus
+    let reminderMinutes: Int
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -42,5 +43,6 @@ struct AppTask: Codable, Identifiable, Hashable {
         case createdAt        = "created_at"
         case closedAt         = "closed_at"
         case status
+        case reminderMinutes  = "reminder_minutes"
     }
 }
