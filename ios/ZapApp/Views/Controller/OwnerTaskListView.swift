@@ -102,6 +102,16 @@ struct OwnerTaskListView: View {
                 taskToDelete = task
                 showDeleteAlert = true
             }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                if task.status != .closed && task.status != .waitingAck {
+                    Button(role: .destructive) {
+                        taskToDelete = task
+                        showDeleteAlert = true
+                    } label: {
+                        Label("削除", systemImage: "trash")
+                    }
+                }
+            }
         }
         .listStyle(.insetGrouped)
     }
@@ -189,7 +199,7 @@ struct ControllerTaskCardView: View {
 
             // not_started 警告
             if showNotStartedWarning {
-                Text("送信できませんでした。本人の端末がオフライン、通知制限中、またはPavlokがBluetooth未接続の可能性があります。")
+                Text("送信できませんでした。Pavlok連携が未設定か、Pavlok APIへの送信に失敗した可能性があります。")
                     .font(.caption)
                     .foregroundStyle(.orange)
                     .padding(8)
@@ -206,22 +216,26 @@ struct ControllerTaskCardView: View {
                 .foregroundStyle(.orange)
             }
 
-            // 削除ボタン（scheduledのみ）
-            if task.status == .scheduled {
+            // 削除ボタン（closed・waitingAck以外）
+            if task.status != .closed && task.status != .waitingAck {
                 Button {
                     onDelete()
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         if isDeleting {
                             ProgressView()
                                 .scaleEffect(0.8)
                         } else {
                             Image(systemName: "trash")
                             Text("タスクを削除")
+                                .fontWeight(.medium)
                         }
                     }
-                    .font(.caption)
-                    .foregroundStyle(.red)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(.red, in: Capsule())
                 }
                 .buttonStyle(.borderless)
                 .disabled(isDeleting)
