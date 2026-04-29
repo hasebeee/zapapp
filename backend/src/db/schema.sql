@@ -43,6 +43,20 @@ CREATE TABLE IF NOT EXISTS relationships (
 CREATE INDEX IF NOT EXISTS idx_relationships_owner ON relationships(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_relationships_controller ON relationships(controller_user_id);
 
+-- 同一owner/controllerペアの重複を防ぐ
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'relationships_owner_controller_unique'
+  ) THEN
+    -- 既存の重複を削除（最古のレコードを残す）
+    DELETE FROM relationships WHERE id NOT IN (
+      SELECT MIN(id) FROM relationships GROUP BY owner_user_id, controller_user_id
+    );
+    ALTER TABLE relationships ADD CONSTRAINT relationships_owner_controller_unique
+      UNIQUE (owner_user_id, controller_user_id);
+  END IF;
+END $$;
+
 -- ──────────────────────────────────────────────
 -- invites
 -- ──────────────────────────────────────────────

@@ -23,6 +23,31 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // +7日
 
   try {
+    // すでにpendingの招待が存在する場合はエラー
+    const existingInvite = await pool.query<{ id: string }>(
+      `SELECT id FROM invites
+       WHERE owner_user_id = $1 AND invitee_email = $2 AND status = 'pending' AND expires_at > NOW()`,
+      [userId, inviteeEmail]
+    );
+    if (existingInvite.rows.length > 0) {
+      console.warn(`[POST /invites] Pending invite already exists for email=${inviteeEmail}`);
+      res.status(409).json({ error: 'このメールアドレスにはすでに招待を送っています。' });
+      return;
+    }
+
+    // すでにアクティブなリレーションシップが存在する場合もエラー
+    const existingRel = await pool.query<{ id: string }>(
+      `SELECT r.id FROM relationships r
+       JOIN users u ON u.id = r.controller_user_id
+       WHERE r.owner_user_id = $1 AND u.email = $2 AND r.status = 'active'`,
+      [userId, inviteeEmail]
+    );
+    if (existingRel.rows.length > 0) {
+      console.warn(`[POST /invites] Active relationship already exists for email=${inviteeEmail}`);
+      res.status(409).json({ error: 'このメールアドレスとはすでにつながっています。' });
+      return;
+    }
+
     const result = await pool.query<InviteRow>(
       `INSERT INTO invites (id, owner_user_id, invitee_email, token, status, expires_at, created_at)
        VALUES (uuid_generate_v4(), $1, $2, $3, 'pending', $4, NOW())
@@ -115,6 +140,18 @@ router.post('/accept', async (req: AuthRequest, res: Response): Promise<void> =>
       await client.query('ROLLBACK');
       console.warn(`[POST /invites/accept] Invite expired: id=${invite.id}`);
       res.status(400).json({ error: 'Invite has expired' });
+      return;
+    }
+
+    // すでにアクティブなリレーションシップがあれば作成しない
+    const existingRel = await client.query<{ id: string }>(
+      `SELECT id FROM relationships WHERE owner_user_id = $1 AND controller_user_id = $2`,
+      [invite.owner_user_id, userId]
+    );
+    if (existingRel.rows.length > 0) {
+      await client.query('ROLLBACK');
+      console.warn(`[POST /invites/accept] Relationship already exists: owner=${invite.owner_user_id} controller=${userId}`);
+      res.status(409).json({ error: 'すでにつながっています。' });
       return;
     }
 
