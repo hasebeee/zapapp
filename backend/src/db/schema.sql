@@ -50,7 +50,9 @@ DO $$ BEGIN
   ) THEN
     -- 既存の重複を削除（最古のレコードを残す）
     DELETE FROM relationships WHERE id NOT IN (
-      SELECT MIN(id) FROM relationships GROUP BY owner_user_id, controller_user_id
+      SELECT DISTINCT ON (owner_user_id, controller_user_id) id
+      FROM relationships
+      ORDER BY owner_user_id, controller_user_id, created_at ASC
     );
     ALTER TABLE relationships ADD CONSTRAINT relationships_owner_controller_unique
       UNIQUE (owner_user_id, controller_user_id);
