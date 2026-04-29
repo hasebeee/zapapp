@@ -3,23 +3,27 @@ dotenv.config();
 
 import app from './app';
 import pool from './db';
+import { applySchema } from './db/applySchema';
 import { startCronJobs } from './jobs/cronJobs';
-import fs from 'fs';
-import path from 'path';
 
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
+const APP_ENV = process.env.APP_ENV ?? process.env.NODE_ENV ?? 'development';
 
 async function main(): Promise<void> {
-  // DB接続確認 + スキーマ適用
+  // DB接続確認。production では起動時にスキーマ変更しない。
   try {
     const client = await pool.connect();
     await client.query('SELECT 1');
-    const schema = fs.readFileSync(path.join(__dirname, 'db/schema.sql'), 'utf8');
-    await client.query(schema);
     client.release();
-    console.log('Database connected and schema applied successfully');
+
+    if (APP_ENV !== 'production') {
+      await applySchema();
+      console.log('Database connected and schema applied successfully');
+    } else {
+      console.log('Database connected successfully; schema auto-apply skipped in production');
+    }
   } catch (err) {
-    console.error('Failed to connect to database:', err);
+    console.error('Failed to initialize database:', err);
     process.exit(1);
   }
 
