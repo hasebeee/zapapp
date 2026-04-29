@@ -64,8 +64,6 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
         print("[AppDelegate] Notification tapped: \(userInfo)")
-
-        // Zap通知タップ時はポーラーを即座に起動
         completionHandler()
     }
 

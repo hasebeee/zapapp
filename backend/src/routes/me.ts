@@ -12,7 +12,7 @@ router.get('/profile', async (req: AuthRequest, res: Response): Promise<void> =>
   console.log(`[GET /me/profile] userId=${userId}`);
   try {
     const result = await pool.query<Omit<UserRow, 'pavlok_token'> & { pavlok_connected: boolean }>(
-      `SELECT id, email, display_name, created_at, last_login_at, pavlok_peripheral_id,
+      `SELECT id, email, display_name, created_at, last_login_at,
               (pavlok_token IS NOT NULL) AS pavlok_connected
        FROM users WHERE id = $1`,
       [userId]
