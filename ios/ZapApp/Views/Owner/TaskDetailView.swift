@@ -109,7 +109,7 @@ struct TaskDetailView: View {
                     Text("送信できませんでした")
                         .font(.subheadline.bold())
                         .foregroundStyle(.orange)
-                    Text("本人の端末がオフライン、通知制限中、またはPavlokがBluetooth未接続の可能性があります。")
+                    Text("Pavlok連携が未設定か、Pavlok APIへの送信に失敗した可能性があります。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
