@@ -188,10 +188,10 @@ router.post('/:giftId/use', async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    // Ownerのタスクを作成
+    // Ownerのタスクを作成（reminder_minutesはデフォルト5分）
     const taskResult = await client.query<TaskRow>(
-      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, due_at, created_at, status)
-       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), 'scheduled')
+      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, due_at, created_at, status, reminder_minutes)
+       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), 'scheduled', 5)
        RETURNING *`,
       [gift.owner_user_id, controllerUserId, title, due_at]
     );

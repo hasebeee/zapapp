@@ -38,12 +38,13 @@ struct OwnerHomeView: View {
     @State private var selectedDueDateFilter: DueDateFilter = .all
 
     private let statusOrder: [TaskStatus] = [
-        .readyToZap, .readyToReZap, .waitingAck, .scheduled, .closed
+        .readyToZap, .readyToReZap, .waitingAck, .scheduled
     ]
 
-    // フィルター後のタスク
+    // フィルター後のタスク（完了済みは履歴タブで表示するため除外）
     private var filteredTasks: [AppTask] {
         tasks.filter { task in
+            guard task.status != .closed else { return false }
             let controllerMatch: Bool = {
                 guard let filter = selectedControllerFilter else { return true }
                 return task.controllerUserId == filter
@@ -246,9 +247,9 @@ struct OwnerHomeView: View {
 
     // MARK: - Helpers
 
-    /// タスクに登場するControllerのオプション（表示名付き）
+    /// タスクに登場するControllerのオプション（完了済みタスクは除外）
     private var controllerOptions: [(id: String, name: String)] {
-        let ids = Set(tasks.compactMap { $0.controllerUserId })
+        let ids = Set(tasks.filter { $0.status != .closed }.compactMap { $0.controllerUserId })
         return ids.map { id in
             let name = relationships
                 .first(where: { $0.controllerUserId == id })

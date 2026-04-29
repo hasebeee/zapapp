@@ -117,7 +117,7 @@ struct TaskDetailView: View {
             }
 
             // ACK 締切（waitingAck の場合）
-            if zapRequest.status == .created || currentTask.status == .waitingAck {
+            if currentTask.status == .waitingAck {
                 let remaining = zapRequest.ackDeadlineAt.timeIntervalSinceNow
                 if remaining > 0 {
                     HStack {
