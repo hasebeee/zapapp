@@ -19,7 +19,7 @@ struct LoginView: View {
                     Image(systemName: "bolt.circle.fill")
                         .font(.system(size: 72))
                         .foregroundStyle(.yellow)
-                    Text("ZapApp")
+                    Text("ちゅーぶあぷり")
                         .font(.largeTitle.bold())
                 }
 
