@@ -104,6 +104,25 @@ router.delete('/pavlok/token', async (req: AuthRequest, res: Response): Promise<
 });
 
 // ──────────────────────────────────────────────
+// DELETE /me  — アカウント削除
+// ──────────────────────────────────────────────
+router.delete('/', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { userId } = req.user!;
+
+  console.log(`[DELETE /me] userId=${userId}`);
+
+  try {
+    // CASCADE により関連データ（tasks, relationships, invites, devices, zap_requests等）も削除される
+    await pool.query(`DELETE FROM users WHERE id = $1`, [userId]);
+    console.log(`[DELETE /me] Deleted user userId=${userId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[DELETE /me] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────────
 // GET /me/zap_requests?status=created  — 自分のzap_requests
 // ──────────────────────────────────────────────
 router.get('/zap_requests', async (req: AuthRequest, res: Response): Promise<void> => {

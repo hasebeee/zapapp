@@ -137,6 +137,11 @@ final class APIClient {
         try await performVoid(req, body: ["email": email, "password": password])
     }
 
+    func deleteAccount() async throws {
+        let req = try await authorizedRequest(path: "/me", method: "DELETE")
+        try await performVoid(req)
+    }
+
     func disconnectPavlok() async throws {
         let req = try await authorizedRequest(path: "/me/pavlok/token", method: "DELETE")
         try await performVoid(req)

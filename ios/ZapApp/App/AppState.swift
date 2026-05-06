@@ -73,6 +73,13 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// アカウント削除（DB削除 → Firebase削除 → サインアウト）
+    func deleteAccount() async throws {
+        try await APIClient.shared.deleteAccount()
+        try await Auth.auth().currentUser?.delete()
+        signOut()
+    }
+
     /// 現在のユーザーの ID Token を取得（APIClient で使用）
     func getIDToken() async throws -> String {
         guard let user = Auth.auth().currentUser else {

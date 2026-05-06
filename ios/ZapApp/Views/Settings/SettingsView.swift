@@ -4,6 +4,9 @@ struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
 
     @State private var showLogoutConfirm = false
+    @State private var showDeleteAccountConfirm = false
+    @State private var isDeletingAccount = false
+    @State private var deleteAccountError: String? = nil
     @State private var showInvite = false
     @State private var showPavlokConnect = false
 
@@ -84,6 +87,34 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                // アカウント削除
+                Section {
+                    Button(role: .destructive) {
+                        showDeleteAccountConfirm = true
+                    } label: {
+                        HStack {
+                            if isDeletingAccount {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "person.crop.circle.badge.minus")
+                            }
+                            Text("アカウントを削除")
+                        }
+                    }
+                    .disabled(isDeletingAccount)
+
+                    if let error = deleteAccountError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                } footer: {
+                    Text("アカウントを削除すると、すべてのタスク・つながり・データが完全に削除されます。この操作は取り消せません。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .sheet(isPresented: $showInvite) {
                 InviteView()
@@ -98,6 +129,23 @@ struct SettingsView: View {
                     appState.signOut()
                 }
                 Button("キャンセル", role: .cancel) {}
+            }
+            .confirmationDialog("アカウントを削除しますか？", isPresented: $showDeleteAccountConfirm, titleVisibility: .visible) {
+                Button("削除する", role: .destructive) {
+                    Task {
+                        isDeletingAccount = true
+                        deleteAccountError = nil
+                        do {
+                            try await appState.deleteAccount()
+                        } catch {
+                            deleteAccountError = "削除に失敗しました。もう一度お試しください。"
+                        }
+                        isDeletingAccount = false
+                    }
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("すべてのデータが完全に削除されます。この操作は取り消せません。")
             }
         }
     }
