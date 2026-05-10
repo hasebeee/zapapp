@@ -174,6 +174,14 @@ struct TaskDetailView: View {
                     selectedControllerId == nil ||
                     selectedControllerId == currentTask.controllerUserId
                 )
+
+                Button {
+                    showInvite = true
+                } label: {
+                    Label("新しい監視者を招待", systemImage: "person.badge.plus")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
             }
         }
         .padding()
