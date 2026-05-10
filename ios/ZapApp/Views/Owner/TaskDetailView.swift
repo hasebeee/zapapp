@@ -1,17 +1,23 @@
 import SwiftUI
 
 struct TaskDetailView: View {
+    @EnvironmentObject private var appState: AppState
+
     let task: AppTask
     var onUpdate: (() -> Void)? = nil
 
     @State private var currentTask: AppTask
     @State private var latestZapRequest: ZapRequest? = nil
+    @State private var relationships: [Relationship] = []
+    @State private var selectedControllerId: String? = nil
     @State private var isLoading: Bool = false
     @State private var isAcking: Bool = false
     @State private var isSelfCompleting: Bool = false
+    @State private var isSettingController: Bool = false
     @State private var errorMessage: String? = nil
     @State private var showSelfCompleteAlert: Bool = false
     @State private var showSuccessMessage: String? = nil
+    @State private var showInvite: Bool = false
 
     init(task: AppTask, onUpdate: (() -> Void)? = nil) {
         self.task = task
@@ -25,6 +31,9 @@ struct TaskDetailView: View {
 
                 // MARK: タスク情報カード
                 taskInfoCard
+
+                // MARK: 監視者設定
+                controllerCard
 
                 // MARK: ZapRequest 情報（最新）
                 if let zapRequest = latestZapRequest {
@@ -54,6 +63,11 @@ struct TaskDetailView: View {
         }, message: {
             Text(errorMessage ?? "")
         })
+        .sheet(isPresented: $showInvite, onDismiss: {
+            Task { await loadRelationships() }
+        }) {
+            InviteView()
+        }
         .alert("完了自己申告", isPresented: $showSelfCompleteAlert, actions: {
             Button("申告する", role: .destructive) {
                 Task { await selfComplete() }
@@ -87,6 +101,79 @@ struct TaskDetailView: View {
                 InfoRow(label: "完了日", value: closedAt.formatted(
                     .dateTime.year().month().day().hour().minute()
                 ))
+            }
+        }
+        .padding()
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var controllerCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("監視者")
+                    .font(.headline)
+                Spacer()
+                if isSettingController {
+                    ProgressView()
+                }
+            }
+
+            Divider()
+
+            if let controllerUserId = currentTask.controllerUserId {
+                InfoRow(label: "現在", value: controllerName(for: controllerUserId))
+            } else {
+                InfoRow(label: "現在", value: "未設定")
+            }
+
+            if currentTask.status == .closed || currentTask.status == .waitingAck {
+                Text("このステータスでは監視者を変更できません。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if controllerRelationships.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("設定できる監視者がいません")
+                        .font(.subheadline)
+                    Text("先に監視者を招待して、相手が承認するとここで設定できます。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button {
+                        showInvite = true
+                    } label: {
+                        Label("監視者を招待", systemImage: "person.badge.plus")
+                    }
+                    .buttonStyle(.bordered)
+                }
+            } else {
+                Picker("設定する監視者", selection: $selectedControllerId) {
+                    Text("選択してください").tag(Optional<String>.none)
+                    ForEach(controllerRelationships) { rel in
+                        Text(rel.controllerUser?.displayName ?? rel.controllerUser?.email ?? rel.controllerUserId)
+                            .tag(Optional(rel.controllerUserId))
+                    }
+                }
+                .pickerStyle(.menu)
+
+                Button {
+                    Task { await setController() }
+                } label: {
+                    HStack {
+                        if isSettingController {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "person.crop.circle.badge.checkmark")
+                        }
+                        Text(currentTask.controllerUserId == nil ? "監視者を設定" : "監視者を変更")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(
+                    isSettingController ||
+                    selectedControllerId == nil ||
+                    selectedControllerId == currentTask.controllerUserId
+                )
             }
         }
         .padding()
@@ -202,6 +289,18 @@ struct TaskDetailView: View {
         }
     }
 
+    private var controllerRelationships: [Relationship] {
+        relationships.filter { $0.ownerUserId == appState.dbUserId }
+    }
+
+    private func controllerName(for controllerUserId: String) -> String {
+        relationships
+            .first { $0.controllerUserId == controllerUserId }
+            .flatMap { $0.controllerUser }
+            .map { $0.displayName ?? $0.email }
+        ?? String(controllerUserId.prefix(8))
+    }
+
     // MARK: - Actions
 
     private func refreshTask() async {
@@ -210,9 +309,11 @@ struct TaskDetailView: View {
 
         async let taskResult = APIClient.shared.getTask(taskId: currentTask.id)
         async let zapResult = APIClient.shared.getLatestZapRequest(taskId: currentTask.id)
+        async let relationshipsResult = APIClient.shared.getRelationships()
 
         do {
             currentTask = try await taskResult
+            selectedControllerId = currentTask.controllerUserId
         } catch {
             // タスク取得失敗は無視しない
             errorMessage = error.localizedDescription
@@ -223,6 +324,20 @@ struct TaskDetailView: View {
         } catch {
             // ZapRequest がまだない場合はエラーを無視
             latestZapRequest = nil
+        }
+
+        do {
+            relationships = try await relationshipsResult
+        } catch {
+            relationships = []
+        }
+    }
+
+    private func loadRelationships() async {
+        do {
+            relationships = try await APIClient.shared.getRelationships()
+        } catch {
+            relationships = []
         }
     }
 
@@ -246,6 +361,24 @@ struct TaskDetailView: View {
 
         do {
             currentTask = try await APIClient.shared.selfCompleteTask(taskId: currentTask.id)
+            onUpdate?()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func setController() async {
+        guard let selectedControllerId else { return }
+        isSettingController = true
+        errorMessage = nil
+        defer { isSettingController = false }
+
+        do {
+            currentTask = try await APIClient.shared.updateTaskController(
+                taskId: currentTask.id,
+                controllerUserId: selectedControllerId
+            )
+            self.selectedControllerId = currentTask.controllerUserId
             onUpdate?()
         } catch {
             errorMessage = error.localizedDescription
@@ -285,4 +418,5 @@ struct InfoRow: View {
             reminderMinutes: 5
         ))
     }
+    .environmentObject(AppState())
 }

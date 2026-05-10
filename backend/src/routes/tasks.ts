@@ -21,8 +21,8 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 
   console.log(`[POST /tasks] userId=${userId} title=${title} due_at=${due_at} controller_user_id=${controller_user_id ?? 'none'} reminder_minutes=${reminderMins}`);
 
-  if (!title || !due_at || !controller_user_id) {
-    res.status(400).json({ error: 'title, due_at and controller_user_id are required' });
+  if (!title || !due_at) {
+    res.status(400).json({ error: 'title and due_at are required' });
     return;
   }
 
@@ -100,6 +100,111 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
   } catch (err) {
     console.error('[POST /tasks] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────────
+// PATCH /tasks/:taskId/controller  — 既存タスクにControllerを設定
+// ──────────────────────────────────────────────
+router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { userId } = req.user!;
+  const { taskId } = req.params;
+  const { controller_user_id } = req.body as {
+    controller_user_id?: string;
+  };
+
+  console.log(`[PATCH /tasks/:taskId/controller] userId=${userId} taskId=${taskId} controller_user_id=${controller_user_id ?? 'none'}`);
+
+  if (!controller_user_id) {
+    res.status(400).json({ error: 'controller_user_id is required' });
+    return;
+  }
+
+  try {
+    const taskResult = await pool.query<TaskRow>(
+      `SELECT * FROM tasks WHERE id = $1 AND owner_user_id = $2`,
+      [taskId, userId]
+    );
+
+    if (taskResult.rows.length === 0) {
+      console.warn(`[PATCH /tasks/:taskId/controller] Task not found: taskId=${taskId} userId=${userId}`);
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    const task = taskResult.rows[0];
+    if (task.status === 'closed' || task.status === 'waitingAck') {
+      console.warn(`[PATCH /tasks/:taskId/controller] Cannot update controller: taskId=${taskId} status=${task.status}`);
+      res.status(400).json({ error: 'Cannot update controller for this task status' });
+      return;
+    }
+
+    const relResult = await pool.query(
+      `SELECT id FROM relationships
+       WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
+      [userId, controller_user_id]
+    );
+
+    if (relResult.rows.length === 0) {
+      console.warn(`[PATCH /tasks/:taskId/controller] No active relationship: owner=${userId} controller=${controller_user_id}`);
+      res.status(403).json({ error: 'No active relationship with this controller' });
+      return;
+    }
+
+    const updated = await pool.query<TaskRow>(
+      `UPDATE tasks
+       SET controller_user_id = $1
+       WHERE id = $2 AND owner_user_id = $3
+       RETURNING *`,
+      [controller_user_id, taskId, userId]
+    );
+
+    const updatedTask = updated.rows[0];
+    console.log(`[PATCH /tasks/:taskId/controller] Updated task=${taskId} controller=${controller_user_id}`);
+
+    res.json(updatedTask);
+
+    try {
+      const ownerResult = await pool.query<{ display_name: string }>(
+        `SELECT display_name FROM users WHERE id = $1`,
+        [userId]
+      );
+      const ownerName = ownerResult.rows[0]?.display_name || 'オーナー';
+
+      const devicesResult = await pool.query<DeviceRow>(
+        `SELECT * FROM devices WHERE user_id = $1`,
+        [controller_user_id]
+      );
+
+      const pushPromises = devicesResult.rows.map((device) =>
+        admin.messaging().send({
+          token: device.push_token,
+          notification: {
+            title: 'タスクの監視者に設定されました',
+            body: `${ownerName}さんが「${updatedTask.title}」の監視者に設定しました`,
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: 'default',
+                badge: 1,
+              },
+              taskId: updatedTask.id,
+              type: 'task_controller_assigned',
+            },
+          },
+        }).catch((pushErr) => {
+          console.error(`[PATCH /tasks/:taskId/controller] Push failed for device ${device.id}:`, pushErr);
+        })
+      );
+
+      await Promise.all(pushPromises);
+    } catch (pushErr) {
+      console.error('[PATCH /tasks/:taskId/controller] Push notification error:', pushErr);
+    }
+  } catch (err) {
+    console.error('[PATCH /tasks/:taskId/controller] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

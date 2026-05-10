@@ -231,6 +231,12 @@ final class APIClient {
         return try await perform(req)
     }
 
+    func updateTaskController(taskId: String, controllerUserId: String) async throws -> AppTask {
+        let req = try await authorizedRequest(path: "/tasks/\(taskId)/controller",
+                                              method: "PATCH")
+        return try await perform(req, body: ["controller_user_id": controllerUserId])
+    }
+
     // MARK: - Task APIs (Controller)
 
     func getOwnerTasks(ownerUserId: String, status: [TaskStatus]? = nil) async throws -> [AppTask] {

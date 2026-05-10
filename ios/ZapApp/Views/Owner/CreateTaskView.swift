@@ -22,8 +22,12 @@ struct CreateTaskView: View {
         ("1時間前", 60),
     ]
 
+    private var controllerRelationships: [Relationship] {
+        relationships.filter { $0.ownerUserId == appState.dbUserId }
+    }
+
     private var isFormValid: Bool {
-        !title.trimmingCharacters(in: .whitespaces).isEmpty && dueAt > .now && selectedRelationship != nil
+        !title.trimmingCharacters(in: .whitespaces).isEmpty && dueAt > .now
     }
 
     var body: some View {
@@ -55,13 +59,17 @@ struct CreateTaskView: View {
                             Text("読み込み中...")
                                 .foregroundStyle(.secondary)
                         }
-                    } else if relationships.isEmpty {
-                        Text("まだ関係者がいません")
-                            .foregroundStyle(.secondary)
+                    } else if controllerRelationships.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("まだ監視者がいません")
+                            Text("監視してもらうには、作成後に監視者を招待してタスク詳細から設定してください。")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     } else {
                         Picker("監視者", selection: $selectedRelationship) {
                             Text("選択しない").tag(Optional<Relationship>.none)
-                            ForEach(relationships.filter { $0.ownerUserId == appState.dbUserId }) { rel in
+                            ForEach(controllerRelationships) { rel in
                                 Text(rel.controllerUser?.displayName ?? rel.controllerUser?.email ?? rel.controllerUserId)
                                     .tag(Optional(rel))
                             }
@@ -113,7 +121,7 @@ struct CreateTaskView: View {
         do {
             relationships = try await APIClient.shared.getRelationships()
         } catch {
-            // 取得失敗は無視（監視者一覧なしの場合は作成ボタンが無効のまま）
+            // 取得失敗時も監視者なしのタスク作成は可能にする
         }
     }
 
@@ -138,4 +146,5 @@ struct CreateTaskView: View {
 
 #Preview {
     CreateTaskView()
+        .environmentObject(AppState())
 }
