@@ -19,7 +19,9 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
 
   const reminderMins = typeof reminder_minutes === 'number' ? reminder_minutes : 5;
 
-  console.log(`[POST /tasks] userId=${userId} title=${title} due_at=${due_at} controller_user_id=${controller_user_id ?? 'none'} reminder_minutes=${reminderMins}`);
+  console.log(
+    `[POST /tasks] userId=${userId} title=${title} due_at=${due_at} controller_user_id=${controller_user_id ?? 'none'} reminder_minutes=${reminderMins}`
+  );
 
   if (!title || !due_at) {
     res.status(400).json({ error: 'title and due_at are required' });
@@ -35,7 +37,9 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
         [userId, controller_user_id]
       );
       if (relResult.rows.length === 0) {
-        console.warn(`[POST /tasks] No active relationship: owner=${userId} controller=${controller_user_id}`);
+        console.warn(
+          `[POST /tasks] No active relationship: owner=${userId} controller=${controller_user_id}`
+        );
         res.status(403).json({ error: 'No active relationship with this controller' });
         return;
       }
@@ -68,32 +72,39 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
           `SELECT * FROM devices WHERE user_id = $1`,
           [controller_user_id]
         );
-        console.log(`[POST /tasks] Sending push to ${devicesResult.rows.length} device(s) for controller=${controller_user_id}`);
+        console.log(
+          `[POST /tasks] Sending push to ${devicesResult.rows.length} device(s) for controller=${controller_user_id}`
+        );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          admin.messaging().send({
-            token: device.push_token,
-            notification: {
-              title: '新しいタスクが作成されました',
-              body: `${ownerName}さんが「${task.title}」を追加しました`,
-            },
-            apns: {
-              payload: {
-                aps: {
-                  sound: 'default',
-                  badge: 1,
-                },
-                taskId: task.id,
-                type: 'task_created',
+          admin
+            .messaging()
+            .send({
+              token: device.push_token,
+              notification: {
+                title: '新しいタスクが作成されました',
+                body: `${ownerName}さんが「${task.title}」を追加しました`,
               },
-            },
-          }).catch((pushErr) => {
-            console.error(`[POST /tasks] Push failed for device ${device.id}:`, pushErr);
-          })
+              apns: {
+                payload: {
+                  aps: {
+                    sound: 'default',
+                    badge: 1,
+                  },
+                  taskId: task.id,
+                  type: 'task_created',
+                },
+              },
+            })
+            .catch((pushErr) => {
+              console.error(`[POST /tasks] Push failed for device ${device.id}:`, pushErr);
+            })
         );
 
         await Promise.all(pushPromises);
-        console.log(`[POST /tasks] Notified controller=${controller_user_id} about task=${task.id}`);
+        console.log(
+          `[POST /tasks] Notified controller=${controller_user_id} about task=${task.id}`
+        );
       } catch (pushErr) {
         console.error('[POST /tasks] Push notification error:', pushErr);
       }
@@ -114,7 +125,9 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
     controller_user_id?: string;
   };
 
-  console.log(`[PATCH /tasks/:taskId/controller] userId=${userId} taskId=${taskId} controller_user_id=${controller_user_id ?? 'none'}`);
+  console.log(
+    `[PATCH /tasks/:taskId/controller] userId=${userId} taskId=${taskId} controller_user_id=${controller_user_id ?? 'none'}`
+  );
 
   if (!controller_user_id) {
     res.status(400).json({ error: 'controller_user_id is required' });
@@ -128,14 +141,18 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
     );
 
     if (taskResult.rows.length === 0) {
-      console.warn(`[PATCH /tasks/:taskId/controller] Task not found: taskId=${taskId} userId=${userId}`);
+      console.warn(
+        `[PATCH /tasks/:taskId/controller] Task not found: taskId=${taskId} userId=${userId}`
+      );
       res.status(404).json({ error: 'Task not found' });
       return;
     }
 
     const task = taskResult.rows[0];
     if (task.status === 'closed' || task.status === 'waitingAck') {
-      console.warn(`[PATCH /tasks/:taskId/controller] Cannot update controller: taskId=${taskId} status=${task.status}`);
+      console.warn(
+        `[PATCH /tasks/:taskId/controller] Cannot update controller: taskId=${taskId} status=${task.status}`
+      );
       res.status(400).json({ error: 'Cannot update controller for this task status' });
       return;
     }
@@ -147,7 +164,9 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
     );
 
     if (relResult.rows.length === 0) {
-      console.warn(`[PATCH /tasks/:taskId/controller] No active relationship: owner=${userId} controller=${controller_user_id}`);
+      console.warn(
+        `[PATCH /tasks/:taskId/controller] No active relationship: owner=${userId} controller=${controller_user_id}`
+      );
       res.status(403).json({ error: 'No active relationship with this controller' });
       return;
     }
@@ -161,7 +180,9 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
     );
 
     const updatedTask = updated.rows[0];
-    console.log(`[PATCH /tasks/:taskId/controller] Updated task=${taskId} controller=${controller_user_id}`);
+    console.log(
+      `[PATCH /tasks/:taskId/controller] Updated task=${taskId} controller=${controller_user_id}`
+    );
 
     res.json(updatedTask);
 
@@ -178,25 +199,31 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin.messaging().send({
-          token: device.push_token,
-          notification: {
-            title: 'タスクの監視者に設定されました',
-            body: `${ownerName}さんが「${updatedTask.title}」の監視者に設定しました`,
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: 'default',
-                badge: 1,
-              },
-              taskId: updatedTask.id,
-              type: 'task_controller_assigned',
+        admin
+          .messaging()
+          .send({
+            token: device.push_token,
+            notification: {
+              title: 'タスクの監視者に設定されました',
+              body: `${ownerName}さんが「${updatedTask.title}」の監視者に設定しました`,
             },
-          },
-        }).catch((pushErr) => {
-          console.error(`[PATCH /tasks/:taskId/controller] Push failed for device ${device.id}:`, pushErr);
-        })
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1,
+                },
+                taskId: updatedTask.id,
+                type: 'task_controller_assigned',
+              },
+            },
+          })
+          .catch((pushErr) => {
+            console.error(
+              `[PATCH /tasks/:taskId/controller] Push failed for device ${device.id}:`,
+              pushErr
+            );
+          })
       );
 
       await Promise.all(pushPromises);
@@ -289,7 +316,9 @@ router.post('/:taskId/self_complete', async (req: AuthRequest, res: Response): P
 
     if (taskResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      console.warn(`[POST /tasks/:taskId/self_complete] Not found: taskId=${taskId} userId=${userId}`);
+      console.warn(
+        `[POST /tasks/:taskId/self_complete] Not found: taskId=${taskId} userId=${userId}`
+      );
       res.status(404).json({ error: 'Task not found' });
       return;
     }
@@ -318,7 +347,9 @@ router.post('/:taskId/self_complete', async (req: AuthRequest, res: Response): P
          WHERE task_id = $1 AND status IN ('created', 'executed')`,
         [taskId]
       );
-      console.log(`[POST /tasks/:taskId/self_complete] Expired in-progress zap_requests for taskId=${taskId}`);
+      console.log(
+        `[POST /tasks/:taskId/self_complete] Expired in-progress zap_requests for taskId=${taskId}`
+      );
     }
 
     const updatedTask = await client.query<TaskRow>(
@@ -353,10 +384,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
     await client.query('BEGIN');
 
     // タスク取得
-    const taskResult = await client.query<TaskRow>(
-      `SELECT * FROM tasks WHERE id = $1`,
-      [taskId]
-    );
+    const taskResult = await client.query<TaskRow>(`SELECT * FROM tasks WHERE id = $1`, [taskId]);
 
     if (taskResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -377,7 +405,9 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
 
     if (relResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      console.warn(`[POST /tasks/:taskId/zap] No active relationship: owner=${task.owner_user_id} controller=${controllerUserId}`);
+      console.warn(
+        `[POST /tasks/:taskId/zap] No active relationship: owner=${task.owner_user_id} controller=${controllerUserId}`
+      );
       res.status(403).json({ error: 'No active relationship' });
       return;
     }
@@ -385,7 +415,9 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
     // 指定されたControllerのみZap可能
     if (task.controller_user_id && task.controller_user_id !== controllerUserId) {
       await client.query('ROLLBACK');
-      console.warn(`[POST /tasks/:taskId/zap] Not assigned controller: assigned=${task.controller_user_id} requester=${controllerUserId}`);
+      console.warn(
+        `[POST /tasks/:taskId/zap] Not assigned controller: assigned=${task.controller_user_id} requester=${controllerUserId}`
+      );
       res.status(403).json({ error: 'You are not the assigned controller for this task' });
       return;
     }
@@ -407,7 +439,9 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
 
     if (task.status !== 'readyToZap' && task.status !== 'readyToReZap') {
       await client.query('ROLLBACK');
-      console.warn(`[POST /tasks/:taskId/zap] Task not available: taskId=${taskId} status=${task.status}`);
+      console.warn(
+        `[POST /tasks/:taskId/zap] Task not available: taskId=${taskId} status=${task.status}`
+      );
       res.status(409).json({ reason: 'not_available_yet' });
       return;
     }
@@ -443,7 +477,9 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
     const zapRequest = zapResult.rows[0];
 
     await client.query('COMMIT');
-    console.log(`[POST /tasks/:taskId/zap] ZapRequest created id=${zapRequest.id} taskId=${taskId} owner=${task.owner_user_id}`);
+    console.log(
+      `[POST /tasks/:taskId/zap] ZapRequest created id=${zapRequest.id} taskId=${taskId} owner=${task.owner_user_id}`
+    );
 
     // オーナーのPavlok APIトークンがあればZapを送信
     try {
@@ -454,27 +490,42 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
       const pavlokToken = pavlokResult.rows[0]?.pavlok_token;
 
       if (pavlokToken) {
-        console.log(`[POST /tasks/:taskId/zap] Sending Pavlok API zap for owner=${task.owner_user_id}`);
-        const pavlokRes = await fetch('https://api.pavlok.com/api/v5/stimulus/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${pavlokToken}`,
-          },
-          body: JSON.stringify({ stimulus: { stimulusType: 'zap', stimulusValue: 50 } }),
-        });
-        if (pavlokRes.ok) {
-          console.log(`[POST /tasks/:taskId/zap] Pavlok API zap sent successfully for owner=${task.owner_user_id}`);
+        console.log(
+          `[POST /tasks/:taskId/zap] Sending Pavlok API zap x5 for owner=${task.owner_user_id}`
+        );
+        let succeededZaps = 0;
+        for (let i = 0; i < 5; i++) {
+          const pavlokRes = await fetch('https://api.pavlok.com/api/v5/stimulus/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${pavlokToken}`,
+            },
+            body: JSON.stringify({ stimulus: { stimulusType: 'beep', stimulusValue: 50 } }),
+          });
+          if (pavlokRes.ok) {
+            succeededZaps++;
+          } else {
+            const errText = await pavlokRes.text();
+            console.warn(
+              `[POST /tasks/:taskId/zap] Pavlok zap ${i + 1}/5 failed: ${pavlokRes.status} ${errText}`
+            );
+          }
+          if (i < 4) await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+        console.log(
+          `[POST /tasks/:taskId/zap] Pavlok zap done: ${succeededZaps}/5 succeeded for owner=${task.owner_user_id}`
+        );
+        if (succeededZaps > 0) {
           await pool.query(
-            `UPDATE zap_requests SET status = 'executed', attempted_zaps = 1, succeeded_zaps = 1 WHERE id = $1`,
-            [zapRequest.id]
+            `UPDATE zap_requests SET status = 'executed', attempted_zaps = 5, succeeded_zaps = $1 WHERE id = $2`,
+            [succeededZaps, zapRequest.id]
           );
-        } else {
-          const errText = await pavlokRes.text();
-          console.warn(`[POST /tasks/:taskId/zap] Pavlok API zap failed: ${pavlokRes.status} ${errText}`);
         }
       } else {
-        console.log(`[POST /tasks/:taskId/zap] No Pavlok token for owner=${task.owner_user_id}, skipping Pavlok zap`);
+        console.log(
+          `[POST /tasks/:taskId/zap] No Pavlok token for owner=${task.owner_user_id}, skipping Pavlok zap`
+        );
       }
     } catch (pavlokErr) {
       console.error('[POST /tasks/:taskId/zap] Pavlok API error:', pavlokErr);
@@ -487,37 +538,47 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
         `SELECT * FROM devices WHERE user_id = $1`,
         [task.owner_user_id]
       );
-      console.log(`[POST /tasks/:taskId/zap] Sending push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`);
+      console.log(
+        `[POST /tasks/:taskId/zap] Sending push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`
+      );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin.messaging().send({
-          token: device.push_token,
-          notification: {
-            title: '⚡ Zapされました！',
-            body: `「${task.title}」のタスクにZapが届きました`,
-          },
-          apns: {
-            headers: {
-              'apns-push-type': 'alert',
-              'apns-priority': '10',
+        admin
+          .messaging()
+          .send({
+            token: device.push_token,
+            notification: {
+              title: '⚡ Zapされました！',
+              body: `「${task.title}」のタスクにZapが届きました`,
             },
-            payload: {
-              aps: {
-                'content-available': 1,
-                sound: 'default',
-                badge: 1,
+            apns: {
+              headers: {
+                'apns-push-type': 'alert',
+                'apns-priority': '10',
               },
-              zapRequestId: zapRequest.id,
-              taskId,
+              payload: {
+                aps: {
+                  'content-available': 1,
+                  sound: 'default',
+                  badge: 1,
+                },
+                zapRequestId: zapRequest.id,
+                taskId,
+              },
             },
-          },
-        }).catch((pushErr) => {
-          console.error(`[POST /tasks/:taskId/zap] Push failed for device ${device.id}:`, pushErr);
-        })
+          })
+          .catch((pushErr) => {
+            console.error(
+              `[POST /tasks/:taskId/zap] Push failed for device ${device.id}:`,
+              pushErr
+            );
+          })
       );
 
       await Promise.all(pushPromises);
-      console.log(`[POST /tasks/:taskId/zap] Alert+silent push sent for zapRequest=${zapRequest.id}`);
+      console.log(
+        `[POST /tasks/:taskId/zap] Alert+silent push sent for zapRequest=${zapRequest.id}`
+      );
     } catch (pushErr) {
       console.error('[POST /tasks/:taskId/zap] Push notification error:', pushErr);
       // push失敗はクリティカルではないので続行
@@ -546,10 +607,7 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
   try {
     await client.query('BEGIN');
 
-    const taskResult = await client.query<TaskRow>(
-      `SELECT * FROM tasks WHERE id = $1`,
-      [taskId]
-    );
+    const taskResult = await client.query<TaskRow>(`SELECT * FROM tasks WHERE id = $1`, [taskId]);
 
     if (taskResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -563,7 +621,9 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
     // 割り当てられたControllerのみ削除可能
     if (task.controller_user_id !== controllerUserId) {
       await client.query('ROLLBACK');
-      console.warn(`[DELETE /tasks/:taskId] Forbidden: assigned=${task.controller_user_id} requester=${controllerUserId}`);
+      console.warn(
+        `[DELETE /tasks/:taskId] Forbidden: assigned=${task.controller_user_id} requester=${controllerUserId}`
+      );
       res.status(403).json({ error: 'Only the assigned controller can delete this task' });
       return;
     }
@@ -577,7 +637,9 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
 
     if (relResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      console.warn(`[DELETE /tasks/:taskId] No active relationship: owner=${task.owner_user_id} controller=${controllerUserId}`);
+      console.warn(
+        `[DELETE /tasks/:taskId] No active relationship: owner=${task.owner_user_id} controller=${controllerUserId}`
+      );
       res.status(403).json({ error: 'No active relationship' });
       return;
     }
@@ -589,7 +651,9 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
     await client.query(`DELETE FROM tasks WHERE id = $1`, [taskId]);
 
     await client.query('COMMIT');
-    console.log(`[DELETE /tasks/:taskId] Deleted taskId=${taskId} by controller=${controllerUserId}`);
+    console.log(
+      `[DELETE /tasks/:taskId] Deleted taskId=${taskId} by controller=${controllerUserId}`
+    );
 
     res.json({ ok: true });
 
@@ -605,24 +669,29 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
         `SELECT * FROM devices WHERE user_id = $1`,
         [task.owner_user_id]
       );
-      console.log(`[DELETE /tasks/:taskId] Sending push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`);
+      console.log(
+        `[DELETE /tasks/:taskId] Sending push to ${devicesResult.rows.length} device(s) for owner=${task.owner_user_id}`
+      );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin.messaging().send({
-          token: device.push_token,
-          notification: {
-            title: 'タスクが削除されました',
-            body: `${controllerName}さんが「${task.title}」を削除しました`,
-          },
-          apns: {
-            payload: {
-              aps: { sound: 'default' },
-              type: 'task_deleted',
+        admin
+          .messaging()
+          .send({
+            token: device.push_token,
+            notification: {
+              title: 'タスクが削除されました',
+              body: `${controllerName}さんが「${task.title}」を削除しました`,
             },
-          },
-        }).catch((pushErr) => {
-          console.error(`[DELETE /tasks/:taskId] Push failed for device ${device.id}:`, pushErr);
-        })
+            apns: {
+              payload: {
+                aps: { sound: 'default' },
+                type: 'task_deleted',
+              },
+            },
+          })
+          .catch((pushErr) => {
+            console.error(`[DELETE /tasks/:taskId] Push failed for device ${device.id}:`, pushErr);
+          })
       );
 
       await Promise.all(pushPromises);
@@ -642,59 +711,65 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
 // ──────────────────────────────────────────────
 // GET /tasks/:taskId/latest_zap_request  — 最新zap_request取得
 // ──────────────────────────────────────────────
-router.get('/:taskId/latest_zap_request', async (req: AuthRequest, res: Response): Promise<void> => {
-  const { userId } = req.user!;
-  const { taskId } = req.params;
+router.get(
+  '/:taskId/latest_zap_request',
+  async (req: AuthRequest, res: Response): Promise<void> => {
+    const { userId } = req.user!;
+    const { taskId } = req.params;
 
-  console.log(`[GET /tasks/:taskId/latest_zap_request] userId=${userId} taskId=${taskId}`);
+    console.log(`[GET /tasks/:taskId/latest_zap_request] userId=${userId} taskId=${taskId}`);
 
-  try {
-    // タスク取得
-    const taskResult = await pool.query<TaskRow>(
-      `SELECT * FROM tasks WHERE id = $1`,
-      [taskId]
-    );
+    try {
+      // タスク取得
+      const taskResult = await pool.query<TaskRow>(`SELECT * FROM tasks WHERE id = $1`, [taskId]);
 
-    if (taskResult.rows.length === 0) {
-      console.warn(`[GET /tasks/:taskId/latest_zap_request] Task not found: taskId=${taskId}`);
-      res.status(404).json({ error: 'Task not found' });
-      return;
-    }
-
-    const task = taskResult.rows[0];
-
-    // オーナー本人 または アクティブなControllerであればアクセス可
-    const isOwner = task.owner_user_id === userId;
-    if (!isOwner) {
-      const relResult = await pool.query(
-        `SELECT id FROM relationships
-         WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
-        [task.owner_user_id, userId]
-      );
-      if (relResult.rows.length === 0) {
-        console.warn(`[GET /tasks/:taskId/latest_zap_request] Forbidden: userId=${userId} taskId=${taskId}`);
-        res.status(403).json({ error: 'No active relationship' });
+      if (taskResult.rows.length === 0) {
+        console.warn(`[GET /tasks/:taskId/latest_zap_request] Task not found: taskId=${taskId}`);
+        res.status(404).json({ error: 'Task not found' });
         return;
       }
+
+      const task = taskResult.rows[0];
+
+      // オーナー本人 または アクティブなControllerであればアクセス可
+      const isOwner = task.owner_user_id === userId;
+      if (!isOwner) {
+        const relResult = await pool.query(
+          `SELECT id FROM relationships
+         WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
+          [task.owner_user_id, userId]
+        );
+        if (relResult.rows.length === 0) {
+          console.warn(
+            `[GET /tasks/:taskId/latest_zap_request] Forbidden: userId=${userId} taskId=${taskId}`
+          );
+          res.status(403).json({ error: 'No active relationship' });
+          return;
+        }
+      }
+
+      const zapResult = await pool.query<ZapRequestRow>(
+        `SELECT * FROM zap_requests WHERE task_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [taskId]
+      );
+
+      if (zapResult.rows.length === 0) {
+        console.log(
+          `[GET /tasks/:taskId/latest_zap_request] No zap request yet for taskId=${taskId}`
+        );
+        res.status(404).json({ error: 'No zap request found' });
+        return;
+      }
+
+      console.log(
+        `[GET /tasks/:taskId/latest_zap_request] Found zapRequest id=${zapResult.rows[0].id} status=${zapResult.rows[0].status}`
+      );
+      res.json(zapResult.rows[0]);
+    } catch (err) {
+      console.error('[GET /tasks/:taskId/latest_zap_request] Error:', err);
+      res.status(500).json({ error: 'Internal server error' });
     }
-
-    const zapResult = await pool.query<ZapRequestRow>(
-      `SELECT * FROM zap_requests WHERE task_id = $1 ORDER BY created_at DESC LIMIT 1`,
-      [taskId]
-    );
-
-    if (zapResult.rows.length === 0) {
-      console.log(`[GET /tasks/:taskId/latest_zap_request] No zap request yet for taskId=${taskId}`);
-      res.status(404).json({ error: 'No zap request found' });
-      return;
-    }
-
-    console.log(`[GET /tasks/:taskId/latest_zap_request] Found zapRequest id=${zapResult.rows[0].id} status=${zapResult.rows[0].status}`);
-    res.json(zapResult.rows[0]);
-  } catch (err) {
-    console.error('[GET /tasks/:taskId/latest_zap_request] Error:', err);
-    res.status(500).json({ error: 'Internal server error' });
   }
-});
+);
 
 export default router;
