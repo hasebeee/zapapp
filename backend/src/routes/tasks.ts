@@ -493,24 +493,30 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
         console.log(
           `[POST /tasks/:taskId/zap] Sending Pavlok API zap x5 for owner=${task.owner_user_id}`
         );
-        let succeededZaps = 0;
-        for (let i = 0; i < 5; i++) {
-          const pavlokRes = await fetch('https://api.pavlok.com/api/v5/stimulus/send', {
+        const sendStimulus = async (type: 'zap' | 'beep') => {
+          return fetch('https://api.pavlok.com/api/v5/stimulus/send', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${pavlokToken}`,
             },
-            body: JSON.stringify({ stimulus: { stimulusType: 'zap', stimulusValue: 45 } }),
+            body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: 45 } }),
           });
-          if (pavlokRes.ok) {
+        };
+
+        let succeededZaps = 0;
+        for (let i = 0; i < 5; i++) {
+          await sendStimulus('beep');
+          const zapRes = await sendStimulus('zap');
+          if (zapRes.ok) {
             succeededZaps++;
           } else {
-            const errText = await pavlokRes.text();
+            const errText = await zapRes.text();
             console.warn(
-              `[POST /tasks/:taskId/zap] Pavlok zap ${i + 1}/5 failed: ${pavlokRes.status} ${errText}`
+              `[POST /tasks/:taskId/zap] Pavlok zap ${i + 1}/5 failed: ${zapRes.status} ${errText}`
             );
           }
+
           if (i < 4) await new Promise((resolve) => setTimeout(resolve, 1500));
         }
         console.log(
