@@ -500,7 +500,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
               'Content-Type': 'application/json',
               Authorization: `Bearer ${pavlokToken}`,
             },
-            body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: 45 } }),
+            body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: 100 } }),
           });
         };
 
