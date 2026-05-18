@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseMessaging
 
 /// アプリ全体のグローバル状態を管理するクラス。
 /// EnvironmentObject として各 View に注入する。
@@ -47,6 +48,10 @@ final class AppState: ObservableObject {
                     if let profile = try? await APIClient.shared.getMyProfile() {
                         self?.dbUserId = profile.id
                         self?.pavlokConnected = profile.pavlokConnected
+                    }
+                    // ログイン後にFCMトークンを再登録（起動時にログイン前で失敗した場合の補完）
+                    if let fcmToken = Messaging.messaging().fcmToken {
+                        try? await APIClient.shared.registerDevice(pushToken: fcmToken)
                     }
                 } else {
                     self?.dbUserId = nil
