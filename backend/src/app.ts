@@ -50,6 +50,16 @@ if (!admin.apps.length) {
   }
 
   admin.initializeApp({ credential });
+
+  // 起動時にOAuthトークン取得テスト
+  setTimeout(async () => {
+    try {
+      const token = await credential.getAccessToken();
+      console.log('[Firebase] OAuth token OK, type:', token.token_type, 'expires_in:', token.expires_in);
+    } catch (err: any) {
+      console.error('[Firebase] OAuth token FAILED:', err?.message ?? err);
+    }
+  }, 5000);
 }
 
 // ──────────────────────────────────────────────
