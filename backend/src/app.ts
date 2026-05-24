@@ -40,8 +40,6 @@ if (!admin.apps.length) {
     console.log('[Firebase] projectId:', process.env.FIREBASE_PROJECT_ID);
     console.log('[Firebase] clientEmail:', process.env.FIREBASE_CLIENT_EMAIL);
     console.log('[Firebase] privateKey length:', privateKey?.length ?? 0);
-    console.log('[Firebase] privateKey starts with:', privateKey?.substring(0, 40));
-    console.log('[Firebase] privateKey ends with:', privateKey?.slice(-40));
     credential = admin.credential.cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
