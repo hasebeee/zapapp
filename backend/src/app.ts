@@ -41,10 +41,11 @@ if (!admin.apps.length) {
     console.log('[Firebase] clientEmail:', process.env.FIREBASE_CLIENT_EMAIL);
     console.log('[Firebase] privateKey length:', privateKey?.length ?? 0);
     credential = admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey,
-    });
+      project_id: process.env.FIREBASE_PROJECT_ID,
+      client_email: process.env.FIREBASE_CLIENT_EMAIL,
+      private_key: privateKey,
+      private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+    } as admin.ServiceAccount);
     console.log('[Firebase] Initialized with individual env vars');
   }
 
