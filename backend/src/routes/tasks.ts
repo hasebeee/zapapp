@@ -75,7 +75,6 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
         console.log(
           `[POST /tasks] Sending push to ${devicesResult.rows.length} device(s) for controller=${controller_user_id}`
         );
-        devicesResult.rows.forEach(d => console.log(`[POST /tasks] token len=${d.push_token.length} prefix=${d.push_token.substring(0, 10)}`));
 
         const pushPromises = devicesResult.rows.map((device) =>
           admin
