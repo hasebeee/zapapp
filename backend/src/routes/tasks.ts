@@ -94,7 +94,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
                 },
               },
             })
-            .catch((pushErr) => {
+            .catch((pushErr: unknown) => {
               console.error(`[POST /tasks] Push failed for device ${device.id}:`, pushErr);
             })
         );
@@ -197,9 +197,7 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin
-          .messaging()
-          .send({
+        sendMessage({
             token: device.push_token,
             notification: {
               title: 'タスクの監視者に設定されました',
@@ -216,7 +214,7 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
               },
             },
           })
-          .catch((pushErr) => {
+          .catch((pushErr: unknown) => {
             console.error(
               `[PATCH /tasks/:taskId/controller] Push failed for device ${device.id}:`,
               pushErr
@@ -547,9 +545,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin
-          .messaging()
-          .send({
+        sendMessage({
             token: device.push_token,
             notification: {
               title: '⚡ Zapされました！',
@@ -571,7 +567,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
               },
             },
           })
-          .catch((pushErr) => {
+          .catch((pushErr: unknown) => {
             console.error(
               `[POST /tasks/:taskId/zap] Push failed for device ${device.id}:`,
               pushErr
@@ -678,9 +674,7 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin
-          .messaging()
-          .send({
+        sendMessage({
             token: device.push_token,
             notification: {
               title: 'タスクが削除されました',
@@ -693,7 +687,7 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
               },
             },
           })
-          .catch((pushErr) => {
+          .catch((pushErr: unknown) => {
             console.error(`[DELETE /tasks/:taskId] Push failed for device ${device.id}:`, pushErr);
           })
       );
