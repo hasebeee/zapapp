@@ -59,7 +59,20 @@ if (!admin.apps.length) {
   setTimeout(async () => {
     try {
       const token = await credential.getAccessToken();
-      console.log('[Firebase] OAuth token OK, expires_in:', token.expires_in);
+      console.log('[Firebase] OAuth token OK, expires_in:', token.expires_in, 'access_token prefix:', token.access_token?.substring(0, 20));
+      // Direct FCM test
+      const testResp = await fetch(
+        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: { token: 'test_invalid_token', notification: { title: 'test' } } }),
+        }
+      );
+      console.log('[Firebase] Direct FCM test status:', testResp.status);
     } catch (err: any) {
       console.error('[Firebase] OAuth token FAILED:', err?.message ?? err);
     }
