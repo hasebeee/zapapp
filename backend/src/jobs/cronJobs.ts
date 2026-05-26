@@ -1,6 +1,6 @@
 import cron from 'node-cron';
-import * as admin from 'firebase-admin';
 import pool from '../db';
+import { sendMessage } from '../fcm';
 import { DeviceRow, TaskRow } from '../types';
 
 // ──────────────────────────────────────────────
@@ -31,7 +31,7 @@ async function activateScheduledTasks(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          admin.messaging().send({
+          sendMessage({
             token: device.push_token,
             notification: {
               title: '⚡ Zapできます！',
@@ -117,7 +117,7 @@ async function expireAckDeadlines(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          admin.messaging().send({
+          sendMessage({
             token: device.push_token,
             notification: {
               title: '⚡ 再Zapできます！',
@@ -182,7 +182,7 @@ async function sendReminderNotifications(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          admin.messaging().send({
+          sendMessage({
             token: device.push_token,
             notification: {
               title: '⏰ もうすぐ締切です！',

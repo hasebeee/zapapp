@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
-import * as admin from 'firebase-admin';
 import pool from '../db';
+import { sendMessage } from '../fcm';
 import { AuthRequest, GiftRow, TaskRow, DeviceRow } from '../types';
 
 const router = Router();
@@ -62,7 +62,7 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin.messaging().send({
+        sendMessage({
           token: device.push_token,
           notification: {
             title: '🎁 ギフトが届きました！',
@@ -223,7 +223,7 @@ router.post('/:giftId/use', async (req: AuthRequest, res: Response): Promise<voi
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        admin.messaging().send({
+        sendMessage({
           token: device.push_token,
           notification: {
             title: '🎁 ギフトが使われました！',
