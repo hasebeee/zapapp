@@ -27,7 +27,7 @@ if (!admin.apps.length) {
       const json = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
       const serviceAccount = JSON.parse(json);
       credential = admin.credential.cert(serviceAccount);
-      console.log('[Firebase] Initialized with FIREBASE_SERVICE_ACCOUNT_BASE64');
+      console.log('[Firebase] Initialized with FIREBASE_SERVICE_ACCOUNT_BASE64, project_id:', serviceAccount.project_id);
     } catch (e) {
       console.error('[Firebase] Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e);
       process.exit(1);
@@ -49,7 +49,11 @@ if (!admin.apps.length) {
     console.log('[Firebase] Initialized with individual env vars');
   }
 
-  admin.initializeApp({ credential });
+  const projectId = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64
+    ? JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8')).project_id
+    : process.env.FIREBASE_PROJECT_ID;
+  console.log('[Firebase] Using projectId:', projectId);
+  admin.initializeApp({ credential, projectId });
 
   // 起動時にOAuthトークン取得テスト
   setTimeout(async () => {
