@@ -76,6 +76,7 @@ app.use(express.json());
 
 // ヘルスチェック（認証不要）
 app.get('/health', (_req, res) => {
+  console.log('[health] ping');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
