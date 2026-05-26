@@ -13,6 +13,7 @@ export async function sendMessage(message: admin.messaging.Message): Promise<voi
     throw new Error('FCM not initialized');
   }
   const tokenResult = await _credential.getAccessToken();
+  console.log(`[FCM] sendMessage projectId=${_projectId} token_prefix=${tokenResult.access_token?.substring(0, 20)}`);
   const resp = await fetch(
     `https://fcm.googleapis.com/v1/projects/${_projectId}/messages:send`,
     {
