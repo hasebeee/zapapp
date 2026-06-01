@@ -84,6 +84,10 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
                 body: `${ownerName}さんが「${task.title}」を追加しました`,
               },
               apns: {
+                headers: {
+                  'apns-push-type': 'alert',
+                  'apns-priority': '10',
+                },
                 payload: {
                   aps: {
                     sound: 'default',
@@ -204,6 +208,10 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
               body: `${ownerName}さんが「${updatedTask.title}」の監視者に設定しました`,
             },
             apns: {
+              headers: {
+                'apns-push-type': 'alert',
+                'apns-priority': '10',
+              },
               payload: {
                 aps: {
                   sound: 'default',
@@ -681,6 +689,10 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
               body: `${controllerName}さんが「${task.title}」を削除しました`,
             },
             apns: {
+              headers: {
+                'apns-push-type': 'alert',
+                'apns-priority': '10',
+              },
               payload: {
                 aps: { sound: 'default' },
                 type: 'task_deleted',
