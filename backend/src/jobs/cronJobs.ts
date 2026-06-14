@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import pool from '../db';
-import { sendMessage } from '../fcm';
+import { sendAPNs } from '../apns';
 import { DeviceRow, TaskRow } from '../types';
 
 // ──────────────────────────────────────────────
@@ -20,7 +20,6 @@ async function activateScheduledTasks(): Promise<void> {
 
     console.log(`[cron] Activated ${result.rowCount} task(s) to readyToZap`);
 
-    // 各タスクのControllerに通知
     for (const task of result.rows) {
       if (!task.controller_user_id) continue;
 
@@ -31,23 +30,14 @@ async function activateScheduledTasks(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendMessage({
+          sendAPNs({
             token: device.push_token,
+            environment: device.environment,
             notification: {
               title: '⚡ Zapできます！',
               body: `「${task.title}」の締切が来ました。Zapしましょう！`,
             },
-            apns: {
-              headers: {
-                'apns-push-type': 'alert',
-                'apns-priority': '10',
-              },
-              payload: {
-                aps: { sound: 'default', badge: 1 },
-                taskId: task.id,
-                type: 'ready_to_zap',
-              },
-            },
+            data: { taskId: task.id, type: 'ready_to_zap' },
           }).catch((err) => {
             console.error(`[cron] Push failed for device ${device.id}:`, err);
           })
@@ -106,7 +96,6 @@ async function expireAckDeadlines(): Promise<void> {
 
     await client.query('COMMIT');
 
-    // 各タスクのControllerに再Zap通知
     for (const task of updatedTasks.rows) {
       if (!task.controller_user_id) continue;
 
@@ -117,23 +106,14 @@ async function expireAckDeadlines(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendMessage({
+          sendAPNs({
             token: device.push_token,
+            environment: device.environment,
             notification: {
               title: '⚡ 再Zapできます！',
               body: `「${task.title}」の受領期限が切れました。再度Zapしましょう！`,
             },
-            apns: {
-              headers: {
-                'apns-push-type': 'alert',
-                'apns-priority': '10',
-              },
-              payload: {
-                aps: { sound: 'default', badge: 1 },
-                taskId: task.id,
-                type: 'ready_to_rezap',
-              },
-            },
+            data: { taskId: task.id, type: 'ready_to_rezap' },
           }).catch((err) => {
             console.error(`[cron] Push failed for device ${device.id}:`, err);
           })
@@ -182,23 +162,14 @@ async function sendReminderNotifications(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendMessage({
+          sendAPNs({
             token: device.push_token,
+            environment: device.environment,
             notification: {
               title: '⏰ もうすぐ締切です！',
               body: `「${task.title}」の締切まで ${task.reminder_minutes} 分を切りました。`,
             },
-            apns: {
-              headers: {
-                'apns-push-type': 'alert',
-                'apns-priority': '10',
-              },
-              payload: {
-                aps: { sound: 'default', badge: 1 },
-                taskId: task.id,
-                type: 'reminder',
-              },
-            },
+            data: { taskId: task.id, type: 'reminder' },
           }).catch((err) => {
             console.error(`[cron] Reminder push failed for device ${device.id}:`, err);
           })

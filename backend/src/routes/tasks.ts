@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import pool from '../db';
-import { sendMessage } from '../fcm';
+import { sendAPNs } from '../apns';
 import { AuthRequest, TaskRow, ZapRequestRow, DeviceRow } from '../types';
 
 const router = Router();
@@ -77,30 +77,17 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendMessage({
-              token: device.push_token,
-              notification: {
-                title: '新しいタスクが作成されました',
-                body: `${ownerName}さんが「${task.title}」を追加しました`,
-              },
-              apns: {
-                headers: {
-                  'apns-push-type': 'alert',
-                  'apns-priority': '10',
-                },
-                payload: {
-                  aps: {
-                    sound: 'default',
-                    badge: 1,
-                  },
-                  taskId: task.id,
-                  type: 'task_created',
-                },
-              },
-            })
-            .catch((pushErr: unknown) => {
-              console.error(`[POST /tasks] Push failed for device ${device.id}:`, pushErr);
-            })
+          sendAPNs({
+            token: device.push_token,
+            environment: device.environment,
+            notification: {
+              title: '新しいタスクが作成されました',
+              body: `${ownerName}さんが「${task.title}」を追加しました`,
+            },
+            data: { taskId: task.id, type: 'task_created' },
+          }).catch((pushErr: unknown) => {
+            console.error(`[POST /tasks] Push failed for device ${device.id}:`, pushErr);
+          })
         );
 
         await Promise.all(pushPromises);
@@ -201,33 +188,20 @@ router.patch('/:taskId/controller', async (req: AuthRequest, res: Response): Pro
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendMessage({
-            token: device.push_token,
-            notification: {
-              title: 'タスクの監視者に設定されました',
-              body: `${ownerName}さんが「${updatedTask.title}」の監視者に設定しました`,
-            },
-            apns: {
-              headers: {
-                'apns-push-type': 'alert',
-                'apns-priority': '10',
-              },
-              payload: {
-                aps: {
-                  sound: 'default',
-                  badge: 1,
-                },
-                taskId: updatedTask.id,
-                type: 'task_controller_assigned',
-              },
-            },
-          })
-          .catch((pushErr: unknown) => {
-            console.error(
-              `[PATCH /tasks/:taskId/controller] Push failed for device ${device.id}:`,
-              pushErr
-            );
-          })
+        sendAPNs({
+          token: device.push_token,
+          environment: device.environment,
+          notification: {
+            title: 'タスクの監視者に設定されました',
+            body: `${ownerName}さんが「${updatedTask.title}」の監視者に設定しました`,
+          },
+          data: { taskId: updatedTask.id, type: 'task_controller_assigned' },
+        }).catch((pushErr: unknown) => {
+          console.error(
+            `[PATCH /tasks/:taskId/controller] Push failed for device ${device.id}:`,
+            pushErr
+          );
+        })
       );
 
       await Promise.all(pushPromises);
@@ -553,34 +527,21 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendMessage({
-            token: device.push_token,
-            notification: {
-              title: '⚡ Zapされました！',
-              body: `「${task.title}」のタスクにZapが届きました`,
-            },
-            apns: {
-              headers: {
-                'apns-push-type': 'alert',
-                'apns-priority': '10',
-              },
-              payload: {
-                aps: {
-                  'content-available': 1,
-                  sound: 'default',
-                  badge: 1,
-                },
-                zapRequestId: zapRequest.id,
-                taskId,
-              },
-            },
-          })
-          .catch((pushErr: unknown) => {
-            console.error(
-              `[POST /tasks/:taskId/zap] Push failed for device ${device.id}:`,
-              pushErr
-            );
-          })
+        sendAPNs({
+          token: device.push_token,
+          environment: device.environment,
+          notification: {
+            title: '⚡ Zapされました！',
+            body: `「${task.title}」のタスクにZapが届きました`,
+          },
+          data: { zapRequestId: zapRequest.id, taskId },
+          contentAvailable: true,
+        }).catch((pushErr: unknown) => {
+          console.error(
+            `[POST /tasks/:taskId/zap] Push failed for device ${device.id}:`,
+            pushErr
+          );
+        })
       );
 
       await Promise.all(pushPromises);
@@ -682,26 +643,17 @@ router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void>
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendMessage({
-            token: device.push_token,
-            notification: {
-              title: 'タスクが削除されました',
-              body: `${controllerName}さんが「${task.title}」を削除しました`,
-            },
-            apns: {
-              headers: {
-                'apns-push-type': 'alert',
-                'apns-priority': '10',
-              },
-              payload: {
-                aps: { sound: 'default' },
-                type: 'task_deleted',
-              },
-            },
-          })
-          .catch((pushErr: unknown) => {
-            console.error(`[DELETE /tasks/:taskId] Push failed for device ${device.id}:`, pushErr);
-          })
+        sendAPNs({
+          token: device.push_token,
+          environment: device.environment,
+          notification: {
+            title: 'タスクが削除されました',
+            body: `${controllerName}さんが「${task.title}」を削除しました`,
+          },
+          data: { type: 'task_deleted' },
+        }).catch((pushErr: unknown) => {
+          console.error(`[DELETE /tasks/:taskId] Push failed for device ${device.id}:`, pushErr);
+        })
       );
 
       await Promise.all(pushPromises);

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import * as admin from 'firebase-admin';
 
 import { authMiddleware } from './middleware/auth';
-import { initFCM } from './fcm';
+import { initAPNs } from './apns';
 import invitesRouter from './routes/invites';
 import tasksRouter from './routes/tasks';
 import zapRequestsRouter from './routes/zapRequests';
@@ -55,30 +55,17 @@ if (!admin.apps.length) {
     : process.env.FIREBASE_PROJECT_ID;
   console.log('[Firebase] Using projectId:', projectId);
   admin.initializeApp({ credential, projectId });
-  initFCM(credential, projectId);
+}
 
-  // 起動時にOAuthトークン取得テスト
-  setTimeout(async () => {
-    try {
-      const token = await credential.getAccessToken();
-      console.log('[Firebase] OAuth token OK, expires_in:', token.expires_in, 'access_token prefix:', token.access_token?.substring(0, 20));
-      // Direct FCM test
-      const testResp = await fetch(
-        `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: { token: 'test_invalid_token', notification: { title: 'test' } } }),
-        }
-      );
-      console.log('[Firebase] Direct FCM test status:', testResp.status);
-    } catch (err: any) {
-      console.error('[Firebase] OAuth token FAILED:', err?.message ?? err);
-    }
-  }, 5000);
+// ──────────────────────────────────────────────
+// APNs 初期化
+// ──────────────────────────────────────────────
+const apnsPrivateKey = process.env.APNS_PRIVATE_KEY?.replace(/\\n/g, '\n');
+if (!apnsPrivateKey || !process.env.APNS_KEY_ID || !process.env.APNS_TEAM_ID || !process.env.APNS_BUNDLE_ID) {
+  console.warn('[APNs] Missing env vars: APNS_PRIVATE_KEY, APNS_KEY_ID, APNS_TEAM_ID, APNS_BUNDLE_ID');
+} else {
+  initAPNs(apnsPrivateKey, process.env.APNS_KEY_ID, process.env.APNS_TEAM_ID, process.env.APNS_BUNDLE_ID);
+  console.log(`[APNs] Initialized keyId=${process.env.APNS_KEY_ID} teamId=${process.env.APNS_TEAM_ID} bundleId=${process.env.APNS_BUNDLE_ID}`);
 }
 
 // ──────────────────────────────────────────────

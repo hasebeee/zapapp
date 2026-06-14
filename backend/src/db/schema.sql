@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS devices (
 
 CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices(user_id);
 
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'production' CHECK (environment IN ('production', 'sandbox'));
+
 -- ──────────────────────────────────────────────
 -- relationships
 -- ──────────────────────────────────────────────

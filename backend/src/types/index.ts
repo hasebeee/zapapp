@@ -30,6 +30,7 @@ export interface DeviceRow {
   user_id: string;
   platform: 'ios';
   push_token: string;
+  environment: 'production' | 'sandbox';
   created_at: Date;
   last_seen_at: Date;
 }

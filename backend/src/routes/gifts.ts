@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import pool from '../db';
-import { sendMessage } from '../fcm';
+import { sendAPNs } from '../apns';
 import { AuthRequest, GiftRow, TaskRow, DeviceRow } from '../types';
 
 const router = Router();
@@ -62,20 +62,14 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendMessage({
+        sendAPNs({
           token: device.push_token,
+          environment: device.environment,
           notification: {
             title: '🎁 ギフトが届きました！',
             body: `${ownerName}さんからギフトが届きました。タスクを作成できます！`,
           },
-          apns: {
-            headers: { 'apns-push-type': 'alert', 'apns-priority': '10' },
-            payload: {
-              aps: { sound: 'default', badge: 1 },
-              giftId: gift.id,
-              type: 'gift_received',
-            },
-          },
+          data: { giftId: gift.id, type: 'gift_received' },
         }).catch((err) => {
           console.error(`[POST /gifts] Push failed for device ${device.id}:`, err);
         })
@@ -223,20 +217,14 @@ router.post('/:giftId/use', async (req: AuthRequest, res: Response): Promise<voi
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendMessage({
+        sendAPNs({
           token: device.push_token,
+          environment: device.environment,
           notification: {
             title: '🎁 ギフトが使われました！',
             body: `${controllerName}さんが「${task.title}」というタスクを作成しました`,
           },
-          apns: {
-            headers: { 'apns-push-type': 'alert', 'apns-priority': '10' },
-            payload: {
-              aps: { sound: 'default', badge: 1 },
-              taskId: task.id,
-              type: 'gift_used',
-            },
-          },
+          data: { taskId: task.id, type: 'gift_used' },
         }).catch((err) => {
           console.error(`[POST /gifts/:giftId/use] Push failed for device ${device.id}:`, err);
         })
