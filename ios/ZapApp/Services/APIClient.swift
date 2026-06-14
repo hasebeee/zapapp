@@ -120,9 +120,9 @@ final class APIClient {
 
     // MARK: - Device APIs
 
-    func registerDevice(pushToken: String) async throws {
+    func registerDevice(apnsToken: String, environment: String) async throws {
         let req = try await authorizedRequest(path: "/devices", method: "POST")
-        try await performVoid(req, body: ["push_token": pushToken])
+        try await performVoid(req, body: ["push_token": apnsToken, "environment": environment])
     }
 
     // MARK: - Me APIs

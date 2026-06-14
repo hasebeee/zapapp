@@ -10,9 +10,6 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // FCM デリゲート設定
-        Messaging.messaging().delegate = self
-
         // 通知デリゲート設定（タップ検知用）
         UNUserNotificationCenter.current().delegate = self
 
@@ -33,14 +30,18 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
-    // MARK: - APNs トークン取得 → Firebase に渡す
+    // MARK: - APNs トークン取得 → バックエンドに登録
 
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        Messaging.messaging().apnsToken = deviceToken
-        print("[AppDelegate] APNs token set to Firebase Messaging")
+        let apnsToken = deviceToken.map { String(format: "%02x", $0) }.joined()
+        let environment = Self.apnsEnvironment
+        print("[AppDelegate] APNs token: \(apnsToken.prefix(16))... environment: \(environment)")
+        Task {
+            try? await APIClient.shared.registerDevice(apnsToken: apnsToken, environment: environment)
+        }
     }
 
     func application(
@@ -50,6 +51,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         print("[AppDelegate] Failed to register for remote notifications: \(error)")
     }
 
+    // MARK: - APNs Environment Detection
+
+    /// embedded.mobileprovision の aps-environment を読んで sandbox/production を判定する
+    private static var apnsEnvironment: String {
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url),
+              let content = String(data: data, encoding: .ascii) else {
+            #if DEBUG
+            return "sandbox"
+            #else
+            return "production"
+            #endif
+        }
+        if let keyRange = content.range(of: "aps-environment</key>") {
+            let tail = content[keyRange.upperBound...]
+            if let valueStart = tail.range(of: "<string>"),
+               let valueEnd = tail.range(of: "</string>"),
+               valueStart.upperBound < valueEnd.lowerBound {
+                let value = String(tail[valueStart.upperBound..<valueEnd.lowerBound])
+                return value == "development" ? "sandbox" : "production"
+            }
+        }
+        return "production"
+    }
 }
 
 // MARK: - UNUserNotificationCenterDelegate
@@ -74,19 +99,5 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound, .badge])
-    }
-}
-
-// MARK: - MessagingDelegate
-
-extension AppDelegate: MessagingDelegate {
-
-    /// FCM トークンが取得 / 更新されたらバックエンドに登録
-    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        guard let fcmToken else { return }
-        print("[AppDelegate] FCM token: \(fcmToken)")
-        Task {
-            try? await APIClient.shared.registerDevice(pushToken: fcmToken)
-        }
     }
 }
