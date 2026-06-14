@@ -32,12 +32,17 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     // MARK: - APNs トークン取得 → バックエンドに登録
 
+    static var storedAPNsToken: String? = nil
+    static var storedAPNsEnvironment: String = "production"
+
     func application(
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
         let apnsToken = deviceToken.map { String(format: "%02x", $0) }.joined()
         let environment = Self.apnsEnvironment
+        Self.storedAPNsToken = apnsToken
+        Self.storedAPNsEnvironment = environment
         print("[AppDelegate] APNs token: \(apnsToken.prefix(16))... environment: \(environment)")
         Task {
             try? await APIClient.shared.registerDevice(apnsToken: apnsToken, environment: environment)

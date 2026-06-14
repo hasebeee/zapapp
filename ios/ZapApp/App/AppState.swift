@@ -49,9 +49,9 @@ final class AppState: ObservableObject {
                         self?.dbUserId = profile.id
                         self?.pavlokConnected = profile.pavlokConnected
                     }
-                    // ログイン後にFCMトークンを再登録（起動時にログイン前で失敗した場合の補完）
-                    if let fcmToken = Messaging.messaging().fcmToken {
-                        try? await APIClient.shared.registerDevice(pushToken: fcmToken)
+                    // ログイン後にAPNsトークンを再登録（起動時にログイン前で失敗した場合の補完）
+                    if let apnsToken = AppDelegate.storedAPNsToken {
+                        try? await APIClient.shared.registerDevice(apnsToken: apnsToken, environment: AppDelegate.storedAPNsEnvironment)
                     }
                 } else {
                     self?.dbUserId = nil
