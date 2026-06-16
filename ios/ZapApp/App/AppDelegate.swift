@@ -62,7 +62,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     private static var apnsEnvironment: String {
         guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
               let data = try? Data(contentsOf: url),
-              let content = String(data: data, encoding: .ascii) else {
+              let content = String(data: data, encoding: .isoLatin1) else {
             #if DEBUG
             return "sandbox"
             #else
