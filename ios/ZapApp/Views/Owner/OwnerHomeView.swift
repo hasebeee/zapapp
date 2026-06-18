@@ -37,9 +37,11 @@ struct OwnerHomeView: View {
     @State private var selectedControllerFilter: String? = nil  // controllerUserId or nil = すべて
     @State private var selectedDueDateFilter: DueDateFilter = .all
 
-    private let statusOrder: [TaskStatus] = [
-        .readyToZap, .readyToReZap, .waitingAck, .scheduled
-    ]
+    private let statusOrder: [TaskStatus] = [.scheduled]
+
+    private let dropdownStatusOrder: [TaskStatus] = [.readyToZap, .readyToReZap, .waitingAck]
+
+    @State private var showOtherStatuses: Bool = false
 
     // フィルター後のタスク（完了済みは履歴タブで表示するため除外）
     private var filteredTasks: [AppTask] {
@@ -242,6 +244,40 @@ struct OwnerHomeView: View {
                                         .onTapGesture {
                                             selectedTask = task
                                         }
+                                }
+                            }
+                        }
+                    }
+
+                    let otherTasks = dropdownStatusOrder.flatMap { status in
+                        filteredTasks.filter { $0.status == status }
+                    }
+                    if !otherTasks.isEmpty {
+                        Section {
+                            DisclosureGroup(isExpanded: $showOtherStatuses) {
+                                ForEach(dropdownStatusOrder, id: \.self) { status in
+                                    let filtered = filteredTasks.filter { $0.status == status }
+                                    if !filtered.isEmpty {
+                                        Text(status.label)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .padding(.top, 4)
+                                        ForEach(filtered) { task in
+                                            TaskRowView(task: task)
+                                                .contentShape(Rectangle())
+                                                .onTapGesture { selectedTask = task }
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack {
+                                    Text("その他")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text("\(otherTasks.count)件")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
