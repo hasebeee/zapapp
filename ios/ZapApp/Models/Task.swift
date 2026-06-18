@@ -12,10 +12,10 @@ enum TaskStatus: String, Codable, CaseIterable {
     /// 表示用ラベル
     var label: String {
         switch self {
-        case .scheduled:    return "スケジュール済み"
-        case .readyToZap:   return "判定待ち"
+        case .scheduled:    return "Zap判定前"
+        case .readyToZap:   return "監視者のZap判定待ち"
         case .waitingAck:   return "未報告"
-        case .readyToReZap: return "再 Zap 可能"
+        case .readyToReZap: return "Zap報告がなかったため再Zap可能"
         case .closed:       return "完了"
         }
     }
