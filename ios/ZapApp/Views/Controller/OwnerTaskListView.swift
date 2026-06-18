@@ -11,6 +11,9 @@ struct OwnerTaskListView: View {
     @State private var taskToZap: AppTask? = nil
     @State private var isZapping: Bool = false
     @State private var zapNotStartedTaskId: String? = nil
+    @State private var showApproveAlert: Bool = false
+    @State private var taskToApprove: AppTask? = nil
+    @State private var isApproving: Bool = false
     @State private var showDeleteAlert: Bool = false
     @State private var taskToDelete: AppTask? = nil
     @State private var isDeleting: Bool = false
@@ -41,6 +44,18 @@ struct OwnerTaskListView: View {
             Button("OK") { errorMessage = nil }
         }, message: {
             Text(errorMessage ?? "")
+        })
+        .alert("合格にしますか？", isPresented: $showApproveAlert, actions: {
+            Button("合格にする") {
+                Task { await approveTask() }
+            }
+            Button("キャンセル", role: .cancel) {
+                taskToApprove = nil
+            }
+        }, message: {
+            if let task = taskToApprove {
+                Text("「\(task.title)」を合格にします。\nZapせずにタスクを完了します。")
+            }
         })
         .alert("Zapを送信しますか？", isPresented: $showZapAlert, actions: {
             Button("Zapする", role: .destructive) {
@@ -88,7 +103,6 @@ struct OwnerTaskListView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // 完了済みは履歴タブで表示するため除外
     private var activeTasks: [AppTask] {
         tasks.filter { $0.status != .closed }
     }
@@ -98,9 +112,13 @@ struct OwnerTaskListView: View {
             ControllerTaskCardView(
                 task: task,
                 isZapping: isZapping && taskToZap?.id == task.id,
+                isApproving: isApproving && taskToApprove?.id == task.id,
                 isDeleting: isDeleting && taskToDelete?.id == task.id,
                 showNotStartedWarning: zapNotStartedTaskId == task.id
             ) {
+                taskToApprove = task
+                showApproveAlert = true
+            } onZap: {
                 taskToZap = task
                 showZapAlert = true
             } onDelete: {
@@ -132,6 +150,20 @@ struct OwnerTaskListView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func approveTask() async {
+        guard let task = taskToApprove else { return }
+        isApproving = true
+        defer { isApproving = false }
+
+        do {
+            try await APIClient.shared.approveTask(taskId: task.id)
+            await loadTasks()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        taskToApprove = nil
     }
 
     private func sendZap() async {
@@ -172,14 +204,15 @@ struct OwnerTaskListView: View {
 struct ControllerTaskCardView: View {
     let task: AppTask
     let isZapping: Bool
+    let isApproving: Bool
     let isDeleting: Bool
     let showNotStartedWarning: Bool
+    let onApprove: () -> Void
     let onZap: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            // タスク情報
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(task.title)
@@ -198,11 +231,9 @@ struct ControllerTaskCardView: View {
                 }
                 Spacer()
 
-                // Zap ボタン
-                zapButton
+                actionButtons
             }
 
-            // not_started 警告
             if showNotStartedWarning {
                 Text("送信できませんでした。Pavlok連携が未設定か、Pavlok APIへの送信に失敗した可能性があります。")
                     .font(.caption)
@@ -211,7 +242,6 @@ struct ControllerTaskCardView: View {
                     .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
             }
 
-            // waitingAck: 未報告と残り時間
             if task.status == .waitingAck {
                 HStack(spacing: 4) {
                     Image(systemName: "hourglass")
@@ -221,7 +251,6 @@ struct ControllerTaskCardView: View {
                 .foregroundStyle(.orange)
             }
 
-            // 削除ボタン（closed・waitingAck以外）
             if task.status != .closed && task.status != .waitingAck {
                 Button {
                     onDelete()
@@ -250,31 +279,56 @@ struct ControllerTaskCardView: View {
     }
 
     @ViewBuilder
-    private var zapButton: some View {
+    private var actionButtons: some View {
         switch task.status {
         case .readyToZap, .readyToReZap:
-            Button {
-                onZap()
-            } label: {
-                Group {
-                    if isZapping {
-                        ProgressView()
-                            .tint(.white)
-                            .scaleEffect(0.8)
-                    } else {
-                        HStack(spacing: 4) {
-                            Image(systemName: "bolt.fill")
-                            Text("Zap")
+            HStack(spacing: 8) {
+                Button {
+                    onApprove()
+                } label: {
+                    Group {
+                        if isApproving {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(0.8)
+                        } else {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark")
+                                Text("合格")
+                            }
+                            .fontWeight(.bold)
                         }
-                        .fontWeight(.bold)
                     }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                 }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+                .disabled(isZapping || isApproving)
+
+                Button {
+                    onZap()
+                } label: {
+                    Group {
+                        if isZapping {
+                            ProgressView()
+                                .tint(.white)
+                                .scaleEffect(0.8)
+                        } else {
+                            HStack(spacing: 4) {
+                                Image(systemName: "bolt.fill")
+                                Text("不合格")
+                            }
+                            .fontWeight(.bold)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+                .disabled(isZapping || isApproving)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.red)
-            .disabled(isZapping)
 
         case .scheduled:
             Text("締切後に押せます")

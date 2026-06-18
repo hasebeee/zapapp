@@ -564,6 +564,110 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
 });
 
 // ──────────────────────────────────────────────
+// POST /tasks/:taskId/approve  — 合格（Zapなしで完了）
+// ──────────────────────────────────────────────
+router.post('/:taskId/approve', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { userId: controllerUserId } = req.user!;
+  const { taskId } = req.params;
+
+  console.log(`[POST /tasks/:taskId/approve] controllerUserId=${controllerUserId} taskId=${taskId}`);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const taskResult = await client.query<TaskRow>(`SELECT * FROM tasks WHERE id = $1`, [taskId]);
+
+    if (taskResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    const task = taskResult.rows[0];
+
+    const relResult = await client.query(
+      `SELECT id FROM relationships
+       WHERE owner_user_id = $1 AND controller_user_id = $2 AND status = 'active'`,
+      [task.owner_user_id, controllerUserId]
+    );
+    if (relResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(403).json({ error: 'No active relationship' });
+      return;
+    }
+
+    if (task.controller_user_id && task.controller_user_id !== controllerUserId) {
+      await client.query('ROLLBACK');
+      res.status(403).json({ error: 'You are not the assigned controller for this task' });
+      return;
+    }
+
+    if (task.status !== 'readyToZap' && task.status !== 'readyToReZap') {
+      await client.query('ROLLBACK');
+      res.status(409).json({ error: 'Task cannot be approved in current status' });
+      return;
+    }
+
+    const updated = await client.query<TaskRow>(
+      `UPDATE tasks SET status = 'closed', closed_at = NOW()
+       WHERE id = $1 AND status IN ('readyToZap', 'readyToReZap')
+       RETURNING *`,
+      [taskId]
+    );
+
+    if (updated.rows.length === 0) {
+      await client.query('ROLLBACK');
+      res.status(409).json({ error: 'Concurrent status change' });
+      return;
+    }
+
+    await client.query('COMMIT');
+    console.log(`[POST /tasks/:taskId/approve] Approved taskId=${taskId}`);
+
+    res.json(updated.rows[0]);
+
+    try {
+      const controllerResult = await pool.query<{ display_name: string }>(
+        `SELECT display_name FROM users WHERE id = $1`,
+        [controllerUserId]
+      );
+      const controllerName = controllerResult.rows[0]?.display_name || '監視者';
+
+      const devicesResult = await pool.query<DeviceRow>(
+        `SELECT * FROM devices WHERE user_id = $1`,
+        [task.owner_user_id]
+      );
+
+      const pushPromises = devicesResult.rows.map((device) =>
+        sendAPNs({
+          token: device.push_token,
+          environment: device.environment,
+          notification: {
+            title: '🎉 合格！',
+            body: `${controllerName}さんが「${task.title}」を合格にしました`,
+          },
+          data: { taskId: task.id, type: 'task_approved' },
+        }).catch((err) => {
+          console.error(`[POST /tasks/:taskId/approve] Push failed for device ${device.id}:`, err);
+        })
+      );
+
+      await Promise.all(pushPromises);
+      console.log(`[POST /tasks/:taskId/approve] Notified owner=${task.owner_user_id}`);
+    } catch (pushErr) {
+      console.error('[POST /tasks/:taskId/approve] Push error:', pushErr);
+    }
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[POST /tasks/:taskId/approve] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
+  }
+});
+
+// ──────────────────────────────────────────────
 // DELETE /tasks/:taskId  — タスク削除（割り当てられたControllerのみ）
 // ──────────────────────────────────────────────
 router.delete('/:taskId', async (req: AuthRequest, res: Response): Promise<void> => {

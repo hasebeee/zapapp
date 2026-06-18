@@ -255,6 +255,11 @@ final class APIClient {
         try await performVoid(req)
     }
 
+    func approveTask(taskId: String) async throws {
+        let req = try await authorizedRequest(path: "/tasks/\(taskId)/approve", method: "POST")
+        try await performVoid(req)
+    }
+
     func sendZap(taskId: String) async throws -> ZapResponse {
         let req = try await authorizedRequest(path: "/tasks/\(taskId)/zap", method: "POST")
         return try await perform(req)
