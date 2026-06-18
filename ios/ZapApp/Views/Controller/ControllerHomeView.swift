@@ -36,9 +36,16 @@ struct ControllerHomeView: View {
             })
             .task {
                 await loadRelationships()
+                appState.controllerBadgeCount = 0
             }
             .refreshable {
                 await loadRelationships()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pushNotificationReceived)) { _ in
+                Task {
+                    await loadRelationships()
+                    appState.controllerBadgeCount = 0
+                }
             }
         }
     }

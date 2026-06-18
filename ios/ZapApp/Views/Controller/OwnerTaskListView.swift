@@ -87,6 +87,9 @@ struct OwnerTaskListView: View {
         .refreshable {
             await loadTasks()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .pushNotificationReceived)) { _ in
+            Task { await loadTasks() }
+        }
     }
 
     // MARK: - Subviews

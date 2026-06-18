@@ -2,6 +2,10 @@ import UIKit
 import UserNotifications
 import FirebaseMessaging
 
+extension Notification.Name {
+    static let pushNotificationReceived = Notification.Name("pushNotificationReceived")
+}
+
 final class AppDelegate: NSObject, UIApplicationDelegate {
 
     // MARK: - Launch
@@ -94,6 +98,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
         print("[AppDelegate] Notification tapped: \(userInfo)")
+        NotificationCenter.default.post(name: .pushNotificationReceived, object: nil, userInfo: userInfo)
         completionHandler()
     }
 
@@ -103,6 +108,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        let userInfo = notification.request.content.userInfo
+        NotificationCenter.default.post(name: .pushNotificationReceived, object: nil, userInfo: userInfo)
         completionHandler([.banner, .sound, .badge])
     }
 }

@@ -31,13 +31,39 @@ final class AppState: ObservableObject {
     /// PavlokアカウントAPI連携済みか
     @Published var pavlokConnected: Bool = false
 
+    /// マイタスクタブのバッジ数
+    @Published var ownerBadgeCount: Int = 0
+
+    /// 監視するタブのバッジ数
+    @Published var controllerBadgeCount: Int = 0
+
     // MARK: - Private
 
     private var authStateHandle: AuthStateDidChangeListenerHandle?
 
+    private static let controllerPushTypes: Set<String> = [
+        "task_created", "task_controller_assigned", "ready_to_zap", "ready_to_rezap", "gift_received",
+    ]
+
     // MARK: - Init
 
     init() {
+        NotificationCenter.default.addObserver(
+            forName: .pushNotificationReceived,
+            object: nil,
+            queue: nil
+        ) { [weak self] note in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let type = note.userInfo?["type"] as? String ?? ""
+                if Self.controllerPushTypes.contains(type) {
+                    self.controllerBadgeCount += 1
+                } else {
+                    self.ownerBadgeCount += 1
+                }
+            }
+        }
+
         // Firebase Auth の状態変化を監視
         authStateHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in

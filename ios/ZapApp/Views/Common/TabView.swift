@@ -15,11 +15,13 @@ struct MainTabView: View {
                 .tabItem {
                     Label("マイタスク", systemImage: "checklist")
                 }
+                .badge(appState.ownerBadgeCount)
 
             ControllerHomeView()
                 .tabItem {
                     Label("監視する", systemImage: "bolt.fill")
                 }
+                .badge(appState.controllerBadgeCount)
 
             HistoryView()
                 .tabItem {

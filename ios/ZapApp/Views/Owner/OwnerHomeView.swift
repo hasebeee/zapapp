@@ -118,9 +118,16 @@ struct OwnerHomeView: View {
             })
             .task {
                 await loadAll()
+                appState.ownerBadgeCount = 0
             }
             .refreshable {
                 await loadAll()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pushNotificationReceived)) { _ in
+                Task {
+                    await loadAll()
+                    appState.ownerBadgeCount = 0
+                }
             }
         }
     }
