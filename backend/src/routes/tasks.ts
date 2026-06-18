@@ -469,9 +469,10 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
 
       if (pavlokToken) {
         console.log(
-          `[POST /tasks/:taskId/zap] Sending Pavlok API zap x5 for owner=${task.owner_user_id}`
+          `[POST /tasks/:taskId/zap] Sending Pavlok sequence (beep×1 → vibe×3 → zap×1) for owner=${task.owner_user_id}`
         );
-        const sendStimulus = async (type: 'zap' | 'beep') => {
+        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+        const sendStimulus = async (type: 'zap' | 'beep' | 'vibration') => {
           return fetch('https://api.pavlok.com/api/v5/stimulus/send', {
             method: 'POST',
             headers: {
@@ -482,28 +483,32 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
           });
         };
 
-        let succeededZaps = 0;
-        for (let i = 0; i < 5; i++) {
-          await sendStimulus('beep');
-          const zapRes = await sendStimulus('zap');
-          if (zapRes.ok) {
-            succeededZaps++;
-          } else {
-            const errText = await zapRes.text();
-            console.warn(
-              `[POST /tasks/:taskId/zap] Pavlok zap ${i + 1}/5 failed: ${zapRes.status} ${errText}`
-            );
-          }
+        // beep × 1
+        await sendStimulus('beep');
+        await sleep(1000);
 
-          if (i < 4) await new Promise((resolve) => setTimeout(resolve, 1500));
+        // vibration × 3
+        for (let i = 0; i < 3; i++) {
+          await sendStimulus('vibration');
+          await sleep(1000);
+        }
+
+        // zap × 1
+        const zapRes = await sendStimulus('zap');
+        const succeededZaps = zapRes.ok ? 1 : 0;
+        if (!zapRes.ok) {
+          const errText = await zapRes.text();
+          console.warn(
+            `[POST /tasks/:taskId/zap] Pavlok zap failed: ${zapRes.status} ${errText}`
+          );
         }
         console.log(
-          `[POST /tasks/:taskId/zap] Pavlok zap done: ${succeededZaps}/5 succeeded for owner=${task.owner_user_id}`
+          `[POST /tasks/:taskId/zap] Pavlok sequence done: zap ${succeededZaps ? 'succeeded' : 'failed'} for owner=${task.owner_user_id}`
         );
         if (succeededZaps > 0) {
           await pool.query(
-            `UPDATE zap_requests SET status = 'executed', attempted_zaps = 5, succeeded_zaps = $1 WHERE id = $2`,
-            [succeededZaps, zapRequest.id]
+            `UPDATE zap_requests SET status = 'executed', attempted_zaps = 1, succeeded_zaps = 1 WHERE id = $1`,
+            [zapRequest.id]
           );
         }
       } else {
