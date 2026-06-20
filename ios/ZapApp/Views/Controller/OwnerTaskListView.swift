@@ -234,7 +234,17 @@ struct ControllerTaskCardView: View {
                 }
                 Spacer()
 
-                actionButtons
+                if task.status != .readyToZap && task.status != .readyToReZap {
+                    actionButtons
+                }
+            }
+
+            if task.status == .readyToZap || task.status == .readyToReZap {
+                SwipeJudgeControl(
+                    isLoading: isZapping || isApproving,
+                    onApprove: onApprove,
+                    onZap: onZap
+                )
             }
 
             if showNotStartedWarning {
@@ -285,53 +295,7 @@ struct ControllerTaskCardView: View {
     private var actionButtons: some View {
         switch task.status {
         case .readyToZap, .readyToReZap:
-            HStack(spacing: 8) {
-                Button {
-                    onApprove()
-                } label: {
-                    Group {
-                        if isApproving {
-                            ProgressView()
-                                .tint(.white)
-                                .scaleEffect(0.8)
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "checkmark")
-                                Text("合格")
-                            }
-                            .fontWeight(.bold)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-                .disabled(isZapping || isApproving)
-
-                Button {
-                    onZap()
-                } label: {
-                    Group {
-                        if isZapping {
-                            ProgressView()
-                                .tint(.white)
-                                .scaleEffect(0.8)
-                        } else {
-                            HStack(spacing: 4) {
-                                Image(systemName: "bolt.fill")
-                                Text("不合格")
-                            }
-                            .fontWeight(.bold)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
-                .disabled(isZapping || isApproving)
-            }
+            EmptyView()
 
         case .scheduled:
             Text("締切後に押せます")
@@ -357,6 +321,96 @@ struct ControllerTaskCardView: View {
                 .padding(.vertical, 8)
                 .background(.green.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
         }
+    }
+}
+
+// MARK: - SwipeJudgeControl
+
+struct SwipeJudgeControl: View {
+    let isLoading: Bool
+    let onApprove: () -> Void  // 左スワイプ = 合格
+    let onZap: () -> Void      // 右スワイプ = 不合格
+
+    @State private var offset: CGFloat = 0
+
+    private let threshold: CGFloat = 70
+
+    private var progress: CGFloat {
+        min(1, max(-1, offset / threshold))
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(backgroundColor)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+
+            HStack {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark")
+                    Text("合格")
+                }
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
+                .opacity(progress < 0 ? Double(-progress) : 0)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Text("不合格")
+                    Image(systemName: "bolt.fill")
+                }
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
+                .opacity(progress > 0 ? Double(progress) : 0)
+            }
+            .padding(.horizontal, 16)
+
+            if isLoading {
+                ProgressView()
+                    .tint(.secondary)
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "chevron.left").font(.caption)
+                    Image(systemName: "bolt.fill").font(.subheadline)
+                    Image(systemName: "chevron.right").font(.caption)
+                }
+                .foregroundStyle(.secondary)
+                .offset(x: offset * 0.25)
+            }
+        }
+        .gesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { value in
+                    guard !isLoading else { return }
+                    withAnimation(.interactiveSpring()) {
+                        offset = value.translation.width
+                    }
+                }
+                .onEnded { value in
+                    guard !isLoading else { return }
+                    let predicted = value.predictedEndTranslation.width
+                    if predicted < -threshold {
+                        onApprove()
+                    } else if predicted > threshold {
+                        onZap()
+                    }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        offset = 0
+                    }
+                }
+        )
+        .disabled(isLoading)
+    }
+
+    private var backgroundColor: Color {
+        if progress < 0 {
+            return .green.opacity(Double(-progress) * 0.85)
+        } else if progress > 0 {
+            return .red.opacity(Double(progress) * 0.85)
+        }
+        return Color(.secondarySystemGroupedBackground)
     }
 }
 
