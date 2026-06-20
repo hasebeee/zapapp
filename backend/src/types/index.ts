@@ -72,6 +72,7 @@ export interface TaskRow {
   owner_user_id: string;
   controller_user_id: string | null;
   title: string;
+  zap_criteria: string | null;
   due_at: Date;
   created_at: Date;
   closed_at: Date | null;

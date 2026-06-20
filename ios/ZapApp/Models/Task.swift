@@ -28,6 +28,7 @@ struct AppTask: Codable, Identifiable, Hashable {
     let ownerUserId: String
     let controllerUserId: String?
     let title: String
+    let zapCriteria: String?
     let dueAt: Date
     let createdAt: Date
     let closedAt: Date?
@@ -39,6 +40,7 @@ struct AppTask: Codable, Identifiable, Hashable {
         case ownerUserId      = "owner_user_id"
         case controllerUserId = "controller_user_id"
         case title
+        case zapCriteria      = "zap_criteria"
         case dueAt            = "due_at"
         case createdAt        = "created_at"
         case closedAt         = "closed_at"

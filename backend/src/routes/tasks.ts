@@ -10,11 +10,12 @@ const router = Router();
 // ──────────────────────────────────────────────
 router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
   const { userId } = req.user!;
-  const { title, due_at, controller_user_id, reminder_minutes } = req.body as {
+  const { title, due_at, controller_user_id, reminder_minutes, zap_criteria } = req.body as {
     title?: string;
     due_at?: string;
     controller_user_id?: string;
     reminder_minutes?: number;
+    zap_criteria?: string;
   };
 
   const reminderMins = typeof reminder_minutes === 'number' ? reminder_minutes : 5;
@@ -46,10 +47,10 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const result = await pool.query<TaskRow>(
-      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, due_at, created_at, status, reminder_minutes)
-       VALUES (uuid_generate_v4(), $1, $2, $3, $4, NOW(), 'scheduled', $5)
+      `INSERT INTO tasks (id, owner_user_id, controller_user_id, title, zap_criteria, due_at, created_at, status, reminder_minutes)
+       VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, NOW(), 'scheduled', $6)
        RETURNING *`,
-      [userId, controller_user_id ?? null, title, due_at, reminderMins]
+      [userId, controller_user_id ?? null, title, zap_criteria ?? null, due_at, reminderMins]
     );
 
     const task = result.rows[0];

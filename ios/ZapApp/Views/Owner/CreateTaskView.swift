@@ -5,6 +5,7 @@ struct CreateTaskView: View {
     @EnvironmentObject private var appState: AppState
 
     @State private var title: String = ""
+    @State private var zapCriteria: String = ""
     @State private var dueAt: Date = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
     @State private var selectedRelationship: Relationship? = nil
     @State private var relationships: [Relationship] = []
@@ -35,12 +36,22 @@ struct CreateTaskView: View {
             Form {
                 Section("タスク情報") {
                     TextField("タスク名", text: $title)
-                        .submitLabel(.done)
+                        .submitLabel(.next)
 
                     DatePicker("締切日時",
                                selection: $dueAt,
                                in: Date.now...,
                                displayedComponents: [.date, .hourAndMinute])
+                }
+
+                Section {
+                    TextField("例：レポートを提出していなければZap", text: $zapCriteria, axis: .vertical)
+                        .lineLimit(3...6)
+                        .submitLabel(.done)
+                } header: {
+                    Text("Zapの基準（任意）")
+                } footer: {
+                    Text("監視者がZapするかどうかの判断材料になります。")
                 }
 
                 Section("通知設定") {
@@ -133,6 +144,7 @@ struct CreateTaskView: View {
         do {
             _ = try await APIClient.shared.createTask(
                 title: title.trimmingCharacters(in: .whitespaces),
+                zapCriteria: zapCriteria.trimmingCharacters(in: .whitespaces),
                 dueAt: dueAt,
                 controllerUserId: selectedRelationship?.controllerUserId,
                 reminderMinutes: reminderMinutes

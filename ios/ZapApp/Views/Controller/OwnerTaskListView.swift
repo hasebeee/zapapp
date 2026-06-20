@@ -239,6 +239,20 @@ struct ControllerTaskCardView: View {
                 }
             }
 
+            if let criteria = task.zapCriteria, !criteria.isEmpty {
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: "text.quote")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 1)
+                    Text(criteria)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(8)
+                .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
+            }
+
             if task.status == .readyToZap || task.status == .readyToReZap {
                 SwipeJudgeControl(
                     isLoading: isZapping || isApproving,
