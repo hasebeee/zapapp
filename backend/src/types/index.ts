@@ -28,7 +28,7 @@ export interface UserRow {
 export interface DeviceRow {
   id: string;
   user_id: string;
-  platform: 'ios';
+  platform: 'ios' | 'android';
   push_token: string;
   environment: 'production' | 'sandbox';
   created_at: Date;

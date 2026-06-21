@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import pool from '../db';
-import { sendAPNs } from '../apns';
+import { sendPush } from '../push';
 import { DeviceRow, TaskRow } from '../types';
 
 // ──────────────────────────────────────────────
@@ -30,15 +30,14 @@ async function activateScheduledTasks(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendAPNs({
-            token: device.push_token,
-            environment: device.environment,
-            notification: {
+          sendPush(
+            device,
+            {
               title: '⚡ Zapできます！',
               body: `「${task.title}」の締切が来ました。Zapしましょう！`,
             },
-            data: { taskId: task.id, type: 'ready_to_zap' },
-          }).catch((err) => {
+            { taskId: task.id, type: 'ready_to_zap' }
+          ).catch((err) => {
             console.error(`[cron] Push failed for device ${device.id}:`, err);
           })
         );
@@ -106,15 +105,14 @@ async function expireAckDeadlines(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendAPNs({
-            token: device.push_token,
-            environment: device.environment,
-            notification: {
+          sendPush(
+            device,
+            {
               title: '⚡ 再Zapできます！',
               body: `「${task.title}」の受領期限が切れました。再度Zapしましょう！`,
             },
-            data: { taskId: task.id, type: 'ready_to_rezap' },
-          }).catch((err) => {
+            { taskId: task.id, type: 'ready_to_rezap' }
+          ).catch((err) => {
             console.error(`[cron] Push failed for device ${device.id}:`, err);
           })
         );
@@ -162,15 +160,14 @@ async function sendReminderNotifications(): Promise<void> {
         );
 
         const pushPromises = devicesResult.rows.map((device) =>
-          sendAPNs({
-            token: device.push_token,
-            environment: device.environment,
-            notification: {
+          sendPush(
+            device,
+            {
               title: '⏰ もうすぐ締切です！',
               body: `「${task.title}」の締切まで ${task.reminder_minutes} 分を切りました。`,
             },
-            data: { taskId: task.id, type: 'reminder' },
-          }).catch((err) => {
+            { taskId: task.id, type: 'reminder' }
+          ).catch((err) => {
             console.error(`[cron] Reminder push failed for device ${device.id}:`, err);
           })
         );

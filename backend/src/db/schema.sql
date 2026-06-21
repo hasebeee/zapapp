@@ -29,6 +29,10 @@ CREATE INDEX IF NOT EXISTS idx_devices_user_id ON devices(user_id);
 
 ALTER TABLE devices ADD COLUMN IF NOT EXISTS environment TEXT NOT NULL DEFAULT 'production' CHECK (environment IN ('production', 'sandbox'));
 
+-- Android (FCM) 対応のため platform に 'android' を許可する
+ALTER TABLE devices DROP CONSTRAINT IF EXISTS devices_platform_check;
+ALTER TABLE devices ADD CONSTRAINT devices_platform_check CHECK (platform IN ('ios', 'android'));
+
 -- ──────────────────────────────────────────────
 -- relationships
 -- ──────────────────────────────────────────────

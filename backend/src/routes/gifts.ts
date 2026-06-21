@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import pool from '../db';
-import { sendAPNs } from '../apns';
+import { sendPush } from '../push';
 import { AuthRequest, GiftRow, TaskRow, DeviceRow } from '../types';
 
 const router = Router();
@@ -62,15 +62,14 @@ router.post('/', async (req: AuthRequest, res: Response): Promise<void> => {
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendAPNs({
-          token: device.push_token,
-          environment: device.environment,
-          notification: {
+        sendPush(
+          device,
+          {
             title: '🎁 ギフトが届きました！',
             body: `${ownerName}さんからギフトが届きました。タスクを作成できます！`,
           },
-          data: { giftId: gift.id, type: 'gift_received' },
-        }).catch((err) => {
+          { giftId: gift.id, type: 'gift_received' }
+        ).catch((err) => {
           console.error(`[POST /gifts] Push failed for device ${device.id}:`, err);
         })
       );
@@ -217,15 +216,14 @@ router.post('/:giftId/use', async (req: AuthRequest, res: Response): Promise<voi
       );
 
       const pushPromises = devicesResult.rows.map((device) =>
-        sendAPNs({
-          token: device.push_token,
-          environment: device.environment,
-          notification: {
+        sendPush(
+          device,
+          {
             title: '🎁 ギフトが使われました！',
             body: `${controllerName}さんが「${task.title}」というタスクを作成しました`,
           },
-          data: { taskId: task.id, type: 'gift_used' },
-        }).catch((err) => {
+          { taskId: task.id, type: 'gift_used' }
+        ).catch((err) => {
           console.error(`[POST /gifts/:giftId/use] Push failed for device ${device.id}:`, err);
         })
       );

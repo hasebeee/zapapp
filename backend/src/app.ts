@@ -5,6 +5,7 @@ import * as admin from 'firebase-admin';
 
 import { authMiddleware } from './middleware/auth';
 import { initAPNs } from './apns';
+import { initFCM } from './fcm';
 import invitesRouter from './routes/invites';
 import tasksRouter from './routes/tasks';
 import zapRequestsRouter from './routes/zapRequests';
@@ -55,6 +56,10 @@ if (!admin.apps.length) {
     : process.env.FIREBASE_PROJECT_ID;
   console.log('[Firebase] Using projectId:', projectId);
   admin.initializeApp({ credential, projectId });
+
+  // Android 向けプッシュ通知 (FCM) は同じサービスアカウント認証情報を利用する
+  initFCM(credential, projectId);
+  console.log('[FCM] Initialized with projectId:', projectId);
 }
 
 // ──────────────────────────────────────────────
