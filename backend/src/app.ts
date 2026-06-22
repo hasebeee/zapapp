@@ -6,6 +6,7 @@ import * as admin from 'firebase-admin';
 import { authMiddleware } from './middleware/auth';
 import { initAPNs } from './apns';
 import { initFCM } from './fcm';
+import { privacyPolicyHtml } from './privacyPolicyHtml';
 import invitesRouter from './routes/invites';
 import tasksRouter from './routes/tasks';
 import zapRequestsRouter from './routes/zapRequests';
@@ -85,6 +86,11 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   console.log('[health] ping');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// プライバシーポリシー（認証不要、Google Play審査用に公開）
+app.get('/privacy', (_req, res) => {
+  res.type('html').send(privacyPolicyHtml);
 });
 
 // 全APIに認証ミドルウェアを適用
