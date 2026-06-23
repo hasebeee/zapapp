@@ -419,6 +419,7 @@ struct InfoRow: View {
             ownerUserId: "u1",
             controllerUserId: nil,
             title: "サンプルタスク",
+            zapCriteria: nil,
             dueAt: .now.addingTimeInterval(3600),
             createdAt: .now,
             closedAt: nil,
