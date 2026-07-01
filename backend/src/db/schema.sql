@@ -155,3 +155,26 @@ CREATE TABLE IF NOT EXISTS gifts (
 
 CREATE INDEX IF NOT EXISTS idx_gifts_owner ON gifts(owner_user_id);
 CREATE INDEX IF NOT EXISTS idx_gifts_controller ON gifts(controller_user_id);
+
+-- ──────────────────────────────────────────────
+-- routines
+-- ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS routines (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  owner_user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  controller_user_id  UUID REFERENCES users(id) ON DELETE SET NULL,
+  title               TEXT NOT NULL,
+  zap_criteria        TEXT,
+  reminder_minutes    INTEGER NOT NULL DEFAULT 5,
+  -- 繰り返し種別: daily | weekly | monthly | custom
+  frequency           TEXT NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly', 'custom')),
+  -- custom 以外の場合: 次回実行時刻はタスク作成後に period を加算して更新
+  -- custom の場合: 以下の配列から次回時刻を取得
+  custom_datetimes    JSONB,             -- ISO8601 文字列の配列 (custom 用)
+  is_active           BOOLEAN NOT NULL DEFAULT true,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  next_run_at         TIMESTAMPTZ        -- 次にタスクを自動作成する時刻
+);
+
+CREATE INDEX IF NOT EXISTS idx_routines_owner ON routines(owner_user_id);
+CREATE INDEX IF NOT EXISTS idx_routines_next_run ON routines(next_run_at) WHERE is_active = true;

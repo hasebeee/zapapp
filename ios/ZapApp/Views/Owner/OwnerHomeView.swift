@@ -20,11 +20,21 @@ enum DueDateFilter: String, CaseIterable {
     }
 }
 
+// MARK: - HomeTab
+
+enum HomeTab: String, CaseIterable {
+    case tasks    = "タスク"
+    case routines = "ルーティーン"
+}
+
 // MARK: - OwnerHomeView
 
 struct OwnerHomeView: View {
     @EnvironmentObject private var appState: AppState
 
+    @State private var activeTab: HomeTab = .tasks
+
+    // Tasks
     @State private var tasks: [AppTask] = []
     @State private var relationships: [Relationship] = []
     @State private var isLoading: Bool = false
@@ -32,18 +42,18 @@ struct OwnerHomeView: View {
     @State private var showCreateTask: Bool = false
     @State private var showInvite: Bool = false
     @State private var selectedTask: AppTask? = nil
-
-    // フィルター
-    @State private var selectedControllerFilter: String? = nil  // controllerUserId or nil = すべて
+    @State private var selectedControllerFilter: String? = nil
     @State private var selectedDueDateFilter: DueDateFilter = .all
-
-    private let statusOrder: [TaskStatus] = [.scheduled]
-
-    private let dropdownStatusOrder: [TaskStatus] = [.readyToZap, .readyToReZap, .waitingAck]
-
     @State private var showOtherStatuses: Bool = false
 
-    // フィルター後のタスク（完了済みは履歴タブで表示するため除外）
+    // Routines
+    @State private var routines: [Routine] = []
+    @State private var showCreateRoutine: Bool = false
+    @State private var selectedRoutine: Routine? = nil
+
+    private let statusOrder: [TaskStatus] = [.scheduled]
+    private let dropdownStatusOrder: [TaskStatus] = [.readyToZap, .readyToReZap, .waitingAck]
+
     private var filteredTasks: [AppTask] {
         tasks.filter { task in
             guard task.status != .closed else { return false }
@@ -56,24 +66,28 @@ struct OwnerHomeView: View {
         }
     }
 
-    // フィルター中かどうか
     private var isFiltering: Bool {
         selectedControllerFilter != nil || selectedDueDateFilter != .all
     }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading && tasks.isEmpty {
-                    ProgressView("読み込み中...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if filteredTasks.isEmpty && tasks.isEmpty {
-                    emptyView
-                } else {
-                    VStack(spacing: 0) {
-                        filterBar
-                        taskList
+            VStack(spacing: 0) {
+                // セグメントコントロール
+                Picker("", selection: $activeTab) {
+                    ForEach(HomeTab.allCases, id: \.self) { tab in
+                        Text(tab.rawValue).tag(tab)
                     }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(Color(.systemGroupedBackground))
+
+                if activeTab == .tasks {
+                    taskContent
+                } else {
+                    routineContent
                 }
             }
             .navigationTitle("マイタスク")
@@ -87,14 +101,18 @@ struct OwnerHomeView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        showCreateTask = true
+                        if activeTab == .tasks {
+                            showCreateTask = true
+                        } else {
+                            showCreateRoutine = true
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        Task { await loadTasks() }
+                        Task { await loadAll() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -105,12 +123,22 @@ struct OwnerHomeView: View {
             }) {
                 CreateTaskView()
             }
+            .sheet(isPresented: $showCreateRoutine, onDismiss: {
+                Task { await loadRoutines() }
+            }) {
+                CreateRoutineView()
+            }
             .sheet(isPresented: $showInvite) {
                 InviteView()
             }
             .navigationDestination(item: $selectedTask) { task in
                 TaskDetailView(task: task, onUpdate: {
                     Task { await loadTasks() }
+                })
+            }
+            .navigationDestination(item: $selectedRoutine) { routine in
+                RoutineDetailView(routine: routine, onUpdate: {
+                    Task { await loadRoutines() }
                 })
             }
             .alert("エラー", isPresented: .constant(errorMessage != nil), actions: {
@@ -134,12 +162,28 @@ struct OwnerHomeView: View {
         }
     }
 
-    // MARK: - Filter Bar
+    // MARK: - Task Content
+
+    @ViewBuilder
+    private var taskContent: some View {
+        Group {
+            if isLoading && tasks.isEmpty {
+                ProgressView("読み込み中...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if filteredTasks.isEmpty && tasks.isEmpty {
+                taskEmptyView
+            } else {
+                VStack(spacing: 0) {
+                    filterBar
+                    taskList
+                }
+            }
+        }
+    }
 
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                // Controller フィルター
                 Menu {
                     Button {
                         selectedControllerFilter = nil
@@ -161,7 +205,6 @@ struct OwnerHomeView: View {
                     )
                 }
 
-                // 締切フィルター
                 Menu {
                     ForEach(DueDateFilter.allCases, id: \.self) { filter in
                         Button {
@@ -178,7 +221,6 @@ struct OwnerHomeView: View {
                     )
                 }
 
-                // リセットボタン
                 if isFiltering {
                     Button {
                         selectedControllerFilter = nil
@@ -197,9 +239,7 @@ struct OwnerHomeView: View {
         .background(Color(.systemGroupedBackground))
     }
 
-    // MARK: - Task List
-
-    private var emptyView: some View {
+    private var taskEmptyView: some View {
         VStack(spacing: 16) {
             Image(systemName: "checklist")
                 .font(.system(size: 60))
@@ -241,9 +281,7 @@ struct OwnerHomeView: View {
                                 ForEach(filtered) { task in
                                     TaskRowView(task: task)
                                         .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            selectedTask = task
-                                        }
+                                        .onTapGesture { selectedTask = task }
                                 }
                             }
                         }
@@ -288,9 +326,65 @@ struct OwnerHomeView: View {
         }
     }
 
+    // MARK: - Routine Content
+
+    @ViewBuilder
+    private var routineContent: some View {
+        if isLoading && routines.isEmpty {
+            ProgressView("読み込み中...")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if routines.isEmpty {
+            routineEmptyView
+        } else {
+            routineList
+        }
+    }
+
+    private var routineEmptyView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "repeat.circle")
+                .font(.system(size: 60))
+                .foregroundStyle(.secondary)
+            Text("ルーティーンがありません")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            Button("ルーティーンを作成") {
+                showCreateRoutine = true
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var routineList: some View {
+        List {
+            let active = routines.filter { $0.isActive }
+            let inactive = routines.filter { !$0.isActive }
+
+            if !active.isEmpty {
+                Section("有効") {
+                    ForEach(active) { routine in
+                        RoutineRowView(routine: routine)
+                            .contentShape(Rectangle())
+                            .onTapGesture { selectedRoutine = routine }
+                    }
+                }
+            }
+            if !inactive.isEmpty {
+                Section("停止中") {
+                    ForEach(inactive) { routine in
+                        RoutineRowView(routine: routine)
+                            .contentShape(Rectangle())
+                            .onTapGesture { selectedRoutine = routine }
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+
     // MARK: - Helpers
 
-    /// タスクに登場するControllerのオプション（完了済みタスクは除外）
     private var controllerOptions: [(id: String, name: String)] {
         let ids = Set(tasks.filter { $0.status != .closed }.compactMap { $0.controllerUserId })
         return ids.map { id in
@@ -315,6 +409,7 @@ struct OwnerHomeView: View {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await loadTasks() }
             group.addTask { await loadRelationships() }
+            group.addTask { await loadRoutines() }
         }
     }
 
@@ -332,6 +427,14 @@ struct OwnerHomeView: View {
         do {
             relationships = try await APIClient.shared.getRelationships()
         } catch {}
+    }
+
+    private func loadRoutines() async {
+        do {
+            routines = try await APIClient.shared.getRoutines()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
 
@@ -409,6 +512,54 @@ struct TaskRowView: View {
         case .scheduled:                 return .blue
         case .closed:                    return .green
         }
+    }
+}
+
+// MARK: - RoutineRowView
+
+struct RoutineRowView: View {
+    let routine: Routine
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(routine.title)
+                    .font(.body)
+                    .lineLimit(2)
+                Spacer()
+                frequencyBadge
+            }
+            HStack {
+                Image(systemName: "repeat")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(routine.scheduleLabel())
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let next = routine.nextRunAt {
+                HStack {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("次回: \(next.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .opacity(routine.isActive ? 1.0 : 0.5)
+    }
+
+    private var frequencyBadge: some View {
+        Text(routine.frequency.label)
+            .font(.caption2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(routine.isActive ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+            .foregroundStyle(routine.isActive ? Color.blue : Color.gray)
+            .clipShape(Capsule())
     }
 }
 

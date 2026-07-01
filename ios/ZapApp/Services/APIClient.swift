@@ -316,4 +316,86 @@ final class APIClient {
         let req = try await authorizedRequest(path: "/zap_requests/\(id)/ack", method: "POST")
         try await performVoid(req)
     }
+
+    // MARK: - Routine APIs
+
+    func getRoutines() async throws -> [Routine] {
+        let req = try await authorizedRequest(path: "/routines")
+        return try await perform(req)
+    }
+
+    func createRoutine(
+        title: String,
+        zapCriteria: String?,
+        controllerUserId: String?,
+        reminderMinutes: Int,
+        frequency: RoutineFrequency,
+        firstRunAt: Date?,
+        customDatetimes: [Date]?
+    ) async throws -> Routine {
+        let req = try await authorizedRequest(path: "/routines", method: "POST")
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let body = CreateRoutineBody(
+            title: title,
+            zapCriteria: zapCriteria.flatMap { $0.isEmpty ? nil : $0 },
+            controllerUserId: controllerUserId,
+            reminderMinutes: reminderMinutes,
+            frequency: frequency.rawValue,
+            firstRunAt: firstRunAt.map { iso.string(from: $0) },
+            customDatetimes: customDatetimes?.map { iso.string(from: $0) }
+        )
+        return try await perform(req, body: body)
+    }
+
+    private struct CreateRoutineBody: Encodable {
+        let title: String
+        let zapCriteria: String?
+        let controllerUserId: String?
+        let reminderMinutes: Int
+        let frequency: String
+        let firstRunAt: String?
+        let customDatetimes: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case title
+            case zapCriteria      = "zap_criteria"
+            case controllerUserId = "controller_user_id"
+            case reminderMinutes  = "reminder_minutes"
+            case frequency
+            case firstRunAt       = "first_run_at"
+            case customDatetimes  = "custom_datetimes"
+        }
+    }
+
+    func updateRoutine(
+        routineId: String,
+        title: String? = nil,
+        zapCriteria: String? = nil,
+        controllerUserId: String?? = nil,
+        reminderMinutes: Int? = nil,
+        isActive: Bool? = nil,
+        customDatetimes: [Date]? = nil
+    ) async throws -> Routine {
+        let req = try await authorizedRequest(path: "/routines/\(routineId)", method: "PATCH")
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var dict: [String: Any?] = [:]
+        if let title { dict["title"] = title }
+        if let zapCriteria { dict["zap_criteria"] = zapCriteria }
+        if let controllerUserId { dict["controller_user_id"] = controllerUserId }
+        if let reminderMinutes { dict["reminder_minutes"] = reminderMinutes }
+        if let isActive { dict["is_active"] = isActive }
+        if let customDatetimes { dict["custom_datetimes"] = customDatetimes.map { iso.string(from: $0) } }
+
+        let data = try JSONSerialization.data(withJSONObject: dict.compactMapValues { $0 as AnyObject })
+        var mutableReq = req
+        mutableReq.httpBody = data
+        return try await perform(mutableReq)
+    }
+
+    func deleteRoutine(routineId: String) async throws {
+        let req = try await authorizedRequest(path: "/routines/\(routineId)", method: "DELETE")
+        try await performVoid(req)
+    }
 }
