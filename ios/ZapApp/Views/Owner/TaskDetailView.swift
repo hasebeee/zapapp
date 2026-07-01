@@ -102,6 +102,26 @@ struct TaskDetailView: View {
                     .dateTime.year().month().day().hour().minute()
                 ))
             }
+
+            if let criteria = currentTask.zapCriteria, !criteria.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Zapの基準")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "text.quote")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 1)
+                        Text(criteria)
+                            .font(.subheadline)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
         }
         .padding()
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))

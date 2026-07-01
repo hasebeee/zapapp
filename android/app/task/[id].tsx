@@ -156,7 +156,14 @@ export default function TaskDetailScreen() {
         {task.closed_at && (
           <InfoRow label="完了日" value={new Date(task.closed_at).toLocaleString('ja-JP')} />
         )}
-        {task.zap_criteria && <InfoRow label="Zap基準" value={task.zap_criteria} />}
+        {task.zap_criteria && (
+          <View style={styles.criteriaSection}>
+            <Text style={styles.infoLabel}>Zapの基準</Text>
+            <View style={styles.criteriaBox}>
+              <Text style={styles.criteriaText}>{task.zap_criteria}</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       <View style={styles.card}>
@@ -280,4 +287,11 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600' },
   ackButton: { backgroundColor: '#007aff' },
   completeButton: { backgroundColor: '#2e7d32' },
+  criteriaSection: { gap: 6 },
+  criteriaBox: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    padding: 10,
+  },
+  criteriaText: { fontSize: 14, color: '#333', lineHeight: 20 },
 });

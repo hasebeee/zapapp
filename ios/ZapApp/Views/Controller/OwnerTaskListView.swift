@@ -357,6 +357,11 @@ struct SwipeJudgeControl: View {
         ZStack {
             RoundedRectangle(cornerRadius: 10)
                 .fill(backgroundColor)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(Color(.separator), lineWidth: 1)
+                        .opacity(progress == 0 ? 1 : 0)
+                )
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
 
@@ -366,8 +371,8 @@ struct SwipeJudgeControl: View {
                     Text("合格")
                 }
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .opacity(progress < 0 ? Double(-progress) : 0)
+                .foregroundStyle(progress < 0 ? Color.white : Color.green)
+                .opacity(progress < 0 ? Double(-progress) : 0.5)
 
                 Spacer()
 
@@ -376,8 +381,8 @@ struct SwipeJudgeControl: View {
                     Image(systemName: "bolt.fill")
                 }
                 .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .opacity(progress > 0 ? Double(progress) : 0)
+                .foregroundStyle(progress > 0 ? Color.white : Color.red)
+                .opacity(progress > 0 ? Double(progress) : 0.5)
             }
             .padding(.horizontal, 16)
 
@@ -387,10 +392,10 @@ struct SwipeJudgeControl: View {
             } else {
                 HStack(spacing: 8) {
                     Image(systemName: "chevron.left").font(.caption)
-                    Image(systemName: "bolt.fill").font(.subheadline)
+                    Image(systemName: "bolt.fill").font(.subheadline).foregroundStyle(.orange)
                     Image(systemName: "chevron.right").font(.caption)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(.tertiaryLabel))
                 .offset(x: offset * 0.25)
             }
         }

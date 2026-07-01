@@ -37,13 +37,24 @@ export function SwipeJudgeControl({ isLoading, onApprove, onZap }: Props) {
       ? `rgba(46, 125, 50, ${-progress * 0.85})`
       : progress > 0
         ? `rgba(211, 47, 47, ${progress * 0.85})`
-        : '#f2f2f7';
+        : 'transparent';
+
+  const leftColor = progress < 0 ? '#fff' : '#2e7d32';
+  const rightColor = progress > 0 ? '#fff' : '#d32f2f';
+  const leftOpacity = progress < 0 ? -progress : 0.5;
+  const rightOpacity = progress > 0 ? progress : 0.5;
 
   return (
-    <View style={[styles.container, { backgroundColor }]} {...panResponder.panHandlers}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor, borderColor: progress === 0 ? '#ccc' : 'transparent' },
+      ]}
+      {...panResponder.panHandlers}
+    >
       <View style={styles.labelRow}>
-        <Text style={[styles.label, { opacity: progress < 0 ? -progress : 0 }]}>✓ 合格</Text>
-        <Text style={[styles.label, { opacity: progress > 0 ? progress : 0 }]}>不合格 ⚡</Text>
+        <Text style={[styles.label, { opacity: leftOpacity, color: leftColor }]}>✓ 合格</Text>
+        <Text style={[styles.label, { opacity: rightOpacity, color: rightColor }]}>不合格 ⚡</Text>
       </View>
 
       {isLoading ? (
@@ -63,6 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   labelRow: {
     position: 'absolute',
@@ -74,6 +86,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  label: { color: '#fff', fontWeight: '700' },
-  hint: { color: '#888', fontSize: 16 },
+  label: { fontWeight: '700' },
+  hint: { color: '#e65100', fontSize: 16 },
 });
