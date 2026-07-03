@@ -1,8 +1,13 @@
 {
   "expo": {
-    "name": "android",
-    "slug": "android",
+    "name": "ZapApp",
+    "slug": "zapapp",
     "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "439ff0a7-0dc4-473f-8fa4-0618534b7e15"
+      }
+    },
     "scheme": "zapapp",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,6 +33,7 @@
       "expo-router",
       "expo-status-bar",
       "expo-notifications"
-    ]
+    ],
+    "owner": "hasebees-team"
   }
 }
