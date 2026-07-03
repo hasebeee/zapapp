@@ -1,0 +1,9 @@
+android/node_modules/
+android/android/
+android/.expo/
+backend/node_modules/
+ios/
+**/*.so
+**/*.aar
+**/*.aab
+**/*.apk
