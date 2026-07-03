@@ -4,5 +4,9 @@ dist/
 web-build/
 android/
 ios/
+**/build/
+**/*.so
+**/*.aab
+**/*.apk
 *.orig.*
 .DS_Store
