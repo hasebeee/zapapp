@@ -127,18 +127,29 @@ export interface AckEventRow {
   created_at: Date;
 }
 
-export type RoutineFrequency = 'daily' | 'weekly' | 'monthly' | 'custom';
+export interface PackageItemRow {
+  id: string;
+  package_id: string;
+  title: string;
+  zap_criteria: string | null;
+  sort_order: number;
+  created_at: Date;
+}
 
-export interface RoutineRow {
+export interface PackageRow {
   id: string;
   owner_user_id: string;
   controller_user_id: string | null;
   title: string;
-  zap_criteria: string | null;
+  time_of_day: string;
   reminder_minutes: number;
-  frequency: RoutineFrequency;
-  custom_datetimes: string[] | null;
-  is_active: boolean;
   created_at: Date;
-  next_run_at: Date | null;
+}
+
+export interface PackageWithItems extends PackageRow {
+  items: PackageItemRow[];
+}
+
+export interface PendingJudgmentTaskRow extends TaskRow {
+  owner_display_name: string;
 }

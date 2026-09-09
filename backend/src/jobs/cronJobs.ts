@@ -1,8 +1,7 @@
 import cron from 'node-cron';
 import pool from '../db';
 import { sendPush } from '../push';
-import { DeviceRow, RoutineRow, TaskRow } from '../types';
-import { calculateNextRunAt } from '../routes/routines';
+import { DeviceRow, TaskRow } from '../types';
 
 // ──────────────────────────────────────────────
 // ジョブ1：scheduled → readyToZap（毎分）
@@ -185,77 +184,6 @@ async function sendReminderNotifications(): Promise<void> {
 }
 
 // ──────────────────────────────────────────────
-// ジョブ4：ルーティーンからタスク自動作成（毎分）
-// next_run_at を過ぎたアクティブなルーティーンに対してタスクを作成し、
-// 次回実行時刻を更新する
-// ──────────────────────────────────────────────
-async function createTasksFromRoutines(): Promise<void> {
-  try {
-    const result = await pool.query<RoutineRow>(
-      `SELECT * FROM routines WHERE is_active = true AND next_run_at IS NOT NULL AND next_run_at <= NOW()`
-    );
-
-    if (!result.rowCount || result.rowCount === 0) return;
-
-    console.log(`[cron] Creating tasks for ${result.rowCount} routine(s)`);
-
-    for (const routine of result.rows) {
-      const client = await pool.connect();
-      try {
-        await client.query('BEGIN');
-
-        // タスク作成（due_at = next_run_at）
-        await client.query<TaskRow>(
-          `INSERT INTO tasks
-             (id, owner_user_id, controller_user_id, title, zap_criteria, due_at, created_at, status, reminder_minutes)
-           VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, NOW(), 'scheduled', $6)`,
-          [
-            routine.owner_user_id,
-            routine.controller_user_id,
-            routine.title,
-            routine.zap_criteria,
-            routine.next_run_at,
-            routine.reminder_minutes,
-          ]
-        );
-
-        // 次回実行時刻を計算
-        const nextRunAt = calculateNextRunAt(
-          routine.frequency,
-          routine.next_run_at!,
-          routine.custom_datetimes
-        );
-
-        if (nextRunAt) {
-          await client.query(
-            `UPDATE routines SET next_run_at = $1 WHERE id = $2`,
-            [nextRunAt, routine.id]
-          );
-        } else {
-          // custom でこれ以上日程がない場合は非アクティブ化
-          await client.query(
-            `UPDATE routines SET is_active = false, next_run_at = NULL WHERE id = $1`,
-            [routine.id]
-          );
-        }
-
-        await client.query('COMMIT');
-        console.log(
-          `[cron] Created task from routine=${routine.id} next_run_at=${nextRunAt?.toISOString() ?? 'none'}`
-        );
-      } catch (err) {
-        await client.query('ROLLBACK');
-        console.error(`[cron] Failed to create task from routine=${routine.id}:`, err);
-      } finally {
-        client.release();
-      }
-    }
-  } catch (err) {
-    console.error('[cron] createTasksFromRoutines error:', err);
-  }
-}
-
-// ──────────────────────────────────────────────
 // cronジョブ起動
 // ──────────────────────────────────────────────
 export function startCronJobs(): void {
@@ -263,7 +191,6 @@ export function startCronJobs(): void {
     await activateScheduledTasks();
     await expireAckDeadlines();
     await sendReminderNotifications();
-    await createTasksFromRoutines();
   });
 
   console.log('[cron] Cron jobs started');

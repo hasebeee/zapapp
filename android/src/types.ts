@@ -112,25 +112,36 @@ export interface GiftUseResponse {
   task: AppTask;
 }
 
-export type RoutineFrequency = 'daily' | 'weekly' | 'monthly' | 'custom';
+export interface PackageItem {
+  id: string;
+  package_id: string;
+  title: string;
+  zap_criteria: string | null;
+  sort_order: number;
+}
 
-export const routineFrequencyLabel: Record<RoutineFrequency, string> = {
-  daily: '毎日',
-  weekly: '毎週',
-  monthly: '毎月',
-  custom: 'カスタム',
-};
-
-export interface Routine {
+export interface Package {
   id: string;
   owner_user_id: string;
   controller_user_id: string | null;
   title: string;
-  zap_criteria: string | null;
+  time_of_day: string;
   reminder_minutes: number;
-  frequency: RoutineFrequency;
-  custom_datetimes: string[] | null;
-  is_active: boolean;
   created_at: string;
-  next_run_at: string | null;
+  items: PackageItem[];
+}
+
+export type PendingJudgmentTask = AppTask & { owner_display_name: string };
+
+/**
+ * パッケージの time_of_day ("HH:MM:SS") を、今日の日付・端末のローカル
+ * タイムゾーンで解釈した Date に変換する。
+ * サーバー側で計算するとサーバーのタイムゾーンとユーザーのタイムゾーンが
+ * ズレるため、必ずクライアント側でこの変換を行ってから due_at として送る。
+ */
+export function todayAtTimeOfDay(timeOfDay: string): Date {
+  const [hours, minutes] = timeOfDay.split(':').map((v) => parseInt(v, 10));
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
 }

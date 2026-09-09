@@ -6,10 +6,10 @@ import type {
   GiftUseResponse,
   Invite,
   InviteResponse,
+  Package,
+  PendingJudgmentTask,
   Relationship,
   RelationshipResponse,
-  Routine,
-  RoutineFrequency,
   TaskStatus,
   ZapRequest,
   ZapResponse,
@@ -196,6 +196,13 @@ export const APIClient = {
     await perform(req);
   },
 
+  // MARK: - Pending judgments (Controller, 全オーナー横断)
+
+  async getPendingJudgments(): Promise<PendingJudgmentTask[]> {
+    const req = await authorizedRequest('/me/pending_judgments');
+    return perform(req);
+  },
+
   // MARK: - Gift
 
   async sendGift(controllerUserId: string, message: string): Promise<Gift> {
@@ -218,58 +225,62 @@ export const APIClient = {
     return perform(req, { title, due_at: dueAt.toISOString() });
   },
 
-  // MARK: - Routine
+  // MARK: - Package
 
-  async getRoutines(): Promise<Routine[]> {
-    const req = await authorizedRequest('/routines');
+  async getPackages(): Promise<Package[]> {
+    const req = await authorizedRequest('/packages');
     return perform(req);
   },
 
-  async createRoutine(params: {
+  async getPackage(packageId: string): Promise<Package> {
+    const req = await authorizedRequest(`/packages/${packageId}`);
+    return perform(req);
+  },
+
+  async createPackage(params: {
     title: string;
-    zapCriteria?: string | null;
     controllerUserId?: string | null;
+    timeOfDay: string;
     reminderMinutes?: number;
-    frequency: RoutineFrequency;
-    firstRunAt?: Date;
-    customDatetimes?: Date[];
-  }): Promise<Routine> {
-    const req = await authorizedRequest('/routines', { method: 'POST' });
+    items: { title: string; zapCriteria?: string | null }[];
+  }): Promise<Package> {
+    const req = await authorizedRequest('/packages', { method: 'POST' });
     return perform(req, {
       title: params.title,
-      zap_criteria: params.zapCriteria || null,
       controller_user_id: params.controllerUserId ?? null,
+      time_of_day: params.timeOfDay,
       reminder_minutes: params.reminderMinutes ?? 5,
-      frequency: params.frequency,
-      first_run_at: params.firstRunAt?.toISOString(),
-      custom_datetimes: params.customDatetimes?.map((d) => d.toISOString()),
+      items: params.items.map((item) => ({ title: item.title, zap_criteria: item.zapCriteria ?? null })),
     });
   },
 
-  async updateRoutine(
-    routineId: string,
+  async updatePackage(
+    packageId: string,
     params: {
       title?: string;
-      zapCriteria?: string | null;
       controllerUserId?: string | null;
+      timeOfDay?: string;
       reminderMinutes?: number;
-      isActive?: boolean;
-      customDatetimes?: Date[];
+      items?: { title: string; zapCriteria?: string | null }[];
     }
-  ): Promise<Routine> {
-    const req = await authorizedRequest(`/routines/${routineId}`, { method: 'PATCH' });
+  ): Promise<Package> {
+    const req = await authorizedRequest(`/packages/${packageId}`, { method: 'PATCH' });
     return perform(req, {
       title: params.title,
-      zap_criteria: params.zapCriteria,
       controller_user_id: params.controllerUserId,
+      time_of_day: params.timeOfDay,
       reminder_minutes: params.reminderMinutes,
-      is_active: params.isActive,
-      custom_datetimes: params.customDatetimes?.map((d) => d.toISOString()),
+      items: params.items?.map((item) => ({ title: item.title, zap_criteria: item.zapCriteria ?? null })),
     });
   },
 
-  async deleteRoutine(routineId: string): Promise<void> {
-    const req = await authorizedRequest(`/routines/${routineId}`, { method: 'DELETE' });
+  async deletePackage(packageId: string): Promise<void> {
+    const req = await authorizedRequest(`/packages/${packageId}`, { method: 'DELETE' });
     await perform(req);
+  },
+
+  async usePackage(packageId: string, dueAt: Date): Promise<AppTask[]> {
+    const req = await authorizedRequest(`/packages/${packageId}/use`, { method: 'POST' });
+    return perform(req, { due_at: dueAt.toISOString() });
   },
 };

@@ -317,85 +317,96 @@ final class APIClient {
         try await performVoid(req)
     }
 
-    // MARK: - Routine APIs
+    // MARK: - Pending Judgments (Controller, 全オーナー横断)
 
-    func getRoutines() async throws -> [Routine] {
-        let req = try await authorizedRequest(path: "/routines")
+    func getPendingJudgments() async throws -> [PendingJudgmentTask] {
+        let req = try await authorizedRequest(path: "/me/pending_judgments")
         return try await perform(req)
     }
 
-    func createRoutine(
+    // MARK: - Package APIs
+
+    struct PackageItemInput: Encodable {
+        let title: String
+        let zapCriteria: String?
+
+        enum CodingKeys: String, CodingKey {
+            case title
+            case zapCriteria = "zap_criteria"
+        }
+    }
+
+    func getPackages() async throws -> [Package] {
+        let req = try await authorizedRequest(path: "/packages")
+        return try await perform(req)
+    }
+
+    func getPackage(packageId: String) async throws -> Package {
+        let req = try await authorizedRequest(path: "/packages/\(packageId)")
+        return try await perform(req)
+    }
+
+    func createPackage(
         title: String,
-        zapCriteria: String?,
         controllerUserId: String?,
+        timeOfDay: String,
         reminderMinutes: Int,
-        frequency: RoutineFrequency,
-        firstRunAt: Date?,
-        customDatetimes: [Date]?
-    ) async throws -> Routine {
-        let req = try await authorizedRequest(path: "/routines", method: "POST")
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let body = CreateRoutineBody(
+        items: [PackageItemInput]
+    ) async throws -> Package {
+        let req = try await authorizedRequest(path: "/packages", method: "POST")
+        let body = CreatePackageBody(
             title: title,
-            zapCriteria: zapCriteria.flatMap { $0.isEmpty ? nil : $0 },
             controllerUserId: controllerUserId,
+            timeOfDay: timeOfDay,
             reminderMinutes: reminderMinutes,
-            frequency: frequency.rawValue,
-            firstRunAt: firstRunAt.map { iso.string(from: $0) },
-            customDatetimes: customDatetimes?.map { iso.string(from: $0) }
+            items: items
         )
         return try await perform(req, body: body)
     }
 
-    private struct CreateRoutineBody: Encodable {
+    private struct CreatePackageBody: Encodable {
         let title: String
-        let zapCriteria: String?
         let controllerUserId: String?
+        let timeOfDay: String
         let reminderMinutes: Int
-        let frequency: String
-        let firstRunAt: String?
-        let customDatetimes: [String]?
+        let items: [PackageItemInput]
 
         enum CodingKeys: String, CodingKey {
             case title
-            case zapCriteria      = "zap_criteria"
             case controllerUserId = "controller_user_id"
+            case timeOfDay        = "time_of_day"
             case reminderMinutes  = "reminder_minutes"
-            case frequency
-            case firstRunAt       = "first_run_at"
-            case customDatetimes  = "custom_datetimes"
+            case items
         }
     }
 
-    func updateRoutine(
-        routineId: String,
+    /// title / items のみ更新（監視者・時刻・リマインダーは作成後は変更不可という前提）
+    func updatePackage(
+        packageId: String,
         title: String? = nil,
-        zapCriteria: String? = nil,
-        controllerUserId: String?? = nil,
-        reminderMinutes: Int? = nil,
-        isActive: Bool? = nil,
-        customDatetimes: [Date]? = nil
-    ) async throws -> Routine {
-        let req = try await authorizedRequest(path: "/routines/\(routineId)", method: "PATCH")
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        var dict: [String: Any?] = [:]
+        items: [PackageItemInput]? = nil
+    ) async throws -> Package {
+        let req = try await authorizedRequest(path: "/packages/\(packageId)", method: "PATCH")
+        var dict: [String: Any] = [:]
         if let title { dict["title"] = title }
-        if let zapCriteria { dict["zap_criteria"] = zapCriteria }
-        if let controllerUserId { dict["controller_user_id"] = controllerUserId }
-        if let reminderMinutes { dict["reminder_minutes"] = reminderMinutes }
-        if let isActive { dict["is_active"] = isActive }
-        if let customDatetimes { dict["custom_datetimes"] = customDatetimes.map { iso.string(from: $0) } }
-
-        let data = try JSONSerialization.data(withJSONObject: dict.compactMapValues { $0 as AnyObject })
+        if let items {
+            dict["items"] = items.map { ["title": $0.title, "zap_criteria": $0.zapCriteria ?? NSNull()] }
+        }
+        let data = try JSONSerialization.data(withJSONObject: dict)
         var mutableReq = req
         mutableReq.httpBody = data
         return try await perform(mutableReq)
     }
 
-    func deleteRoutine(routineId: String) async throws {
-        let req = try await authorizedRequest(path: "/routines/\(routineId)", method: "DELETE")
+    func deletePackage(packageId: String) async throws {
+        let req = try await authorizedRequest(path: "/packages/\(packageId)", method: "DELETE")
         try await performVoid(req)
+    }
+
+    func usePackage(packageId: String, dueAt: Date) async throws -> [AppTask] {
+        let req = try await authorizedRequest(path: "/packages/\(packageId)/use", method: "POST")
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return try await perform(req, body: ["due_at": isoFormatter.string(from: dueAt)])
     }
 }

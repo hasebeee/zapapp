@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { APIClient } from '../../src/services/apiClient';
-import type { AppTask, Routine, TaskStatus } from '../../src/types';
-import { routineFrequencyLabel, taskStatusLabel } from '../../src/types';
+import type { AppTask, Package, TaskStatus } from '../../src/types';
+import { taskStatusLabel } from '../../src/types';
 
 const STATUS_ORDER: TaskStatus[] = ['scheduled'];
 const DROPDOWN_STATUS_ORDER: TaskStatus[] = ['readyToZap', 'readyToReZap', 'waitingAck'];
@@ -22,8 +22,6 @@ const STATUS_COLOR: Record<TaskStatus, string> = {
   scheduled: '#007aff',
   closed: '#2e7d32',
 };
-
-const DAY_OF_WEEK = ['日', '月', '火', '水', '木', '金', '土'];
 
 function formatRelative(dueAt: string): string {
   const diffMs = new Date(dueAt).getTime() - Date.now();
@@ -38,16 +36,9 @@ function formatRelative(dueAt: string): string {
   return diffMs >= 0 ? `${value}後 締切` : `${value}前 締切超過`;
 }
 
-function formatRoutineSchedule(routine: Routine): string {
-  if (!routine.next_run_at) return routineFrequencyLabel[routine.frequency];
-  const date = new Date(routine.next_run_at);
-  const time = date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-  switch (routine.frequency) {
-    case 'daily': return `毎日 ${time}`;
-    case 'weekly': return `毎週${DAY_OF_WEEK[date.getDay()]}曜 ${time}`;
-    case 'monthly': return `毎月${date.getDate()}日 ${time}`;
-    case 'custom': return 'カスタム';
-  }
+function formatTimeOfDay(timeOfDay: string): string {
+  const [hours, minutes] = timeOfDay.split(':');
+  return `作成当日 ${hours}:${minutes}`;
 }
 
 function TaskRow({ task, onPress }: { task: AppTask; onPress: () => void }) {
@@ -68,39 +59,29 @@ function TaskRow({ task, onPress }: { task: AppTask; onPress: () => void }) {
   );
 }
 
-function RoutineRow({ routine, onPress }: { routine: Routine; onPress: () => void }) {
+function PackageRow({ pkg, onPress }: { pkg: Package; onPress: () => void }) {
   return (
     <Pressable style={styles.row} onPress={onPress}>
       <View style={styles.rowTop}>
         <Text style={styles.rowTitle} numberOfLines={2}>
-          {routine.title}
+          {pkg.title}
         </Text>
-        <View style={[styles.badge, { backgroundColor: routine.is_active ? '#007aff33' : '#88888833' }]}>
-          <Text style={[styles.badgeText, { color: routine.is_active ? '#007aff' : '#888' }]}>
-            {routineFrequencyLabel[routine.frequency]}
-          </Text>
+        <View style={[styles.badge, { backgroundColor: '#007aff33' }]}>
+          <Text style={[styles.badgeText, { color: '#007aff' }]}>{pkg.items.length}件</Text>
         </View>
       </View>
-      <View style={styles.routineBottom}>
-        <Text style={styles.rowDue}>{formatRoutineSchedule(routine)}</Text>
-        {!routine.is_active && <Text style={styles.inactiveLabel}>停止中</Text>}
-        {routine.is_active && routine.next_run_at && (
-          <Text style={styles.rowDue}>
-            次回: {new Date(routine.next_run_at).toLocaleString('ja-JP')}
-          </Text>
-        )}
-      </View>
+      <Text style={styles.rowDue}>{formatTimeOfDay(pkg.time_of_day)}</Text>
     </Pressable>
   );
 }
 
-type Tab = 'tasks' | 'routines';
+type Tab = 'tasks' | 'packages';
 
 export default function OwnerHomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('tasks');
   const [tasks, setTasks] = useState<AppTask[]>([]);
-  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showOthers, setShowOthers] = useState(false);
@@ -118,12 +99,12 @@ export default function OwnerHomeScreen() {
     }
   }, []);
 
-  const loadRoutines = useCallback(async () => {
+  const loadPackages = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const result = await APIClient.getRoutines();
-      setRoutines(result);
+      const result = await APIClient.getPackages();
+      setPackages(result);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -135,12 +116,12 @@ export default function OwnerHomeScreen() {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const [tasksResult, routinesResult] = await Promise.all([
+      const [tasksResult, packagesResult] = await Promise.all([
         APIClient.getTasks(),
-        APIClient.getRoutines(),
+        APIClient.getPackages(),
       ]);
       setTasks(tasksResult);
-      setRoutines(routinesResult);
+      setPackages(packagesResult);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -169,7 +150,7 @@ export default function OwnerHomeScreen() {
         <Text style={styles.headerTitle}>マイタスク</Text>
         <Pressable
           onPress={() =>
-            router.push(activeTab === 'tasks' ? '/create-task' : '/create-routine')
+            router.push(activeTab === 'tasks' ? '/create-task' : '/create-package')
           }
         >
           <Text style={styles.headerAction}>＋ 作成</Text>
@@ -187,11 +168,11 @@ export default function OwnerHomeScreen() {
           </Text>
         </Pressable>
         <Pressable
-          style={[styles.segmentBtn, activeTab === 'routines' && styles.segmentBtnActive]}
-          onPress={() => handleTabSwitch('routines')}
+          style={[styles.segmentBtn, activeTab === 'packages' && styles.segmentBtnActive]}
+          onPress={() => handleTabSwitch('packages')}
         >
-          <Text style={[styles.segmentText, activeTab === 'routines' && styles.segmentTextActive]}>
-            ルーティーン
+          <Text style={[styles.segmentText, activeTab === 'packages' && styles.segmentTextActive]}>
+            パッケージ
           </Text>
         </Pressable>
       </View>
@@ -230,24 +211,22 @@ export default function OwnerHomeScreen() {
             }
           />
         )
+      ) : packages.length === 0 && !isLoading ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>パッケージがありません</Text>
+          <Pressable onPress={() => router.push('/create-package')}>
+            <Text style={styles.emptyAction}>パッケージを作成</Text>
+          </Pressable>
+        </View>
       ) : (
-        routines.length === 0 && !isLoading ? (
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>ルーティーンがありません</Text>
-            <Pressable onPress={() => router.push('/create-routine')}>
-              <Text style={styles.emptyAction}>ルーティーンを作成</Text>
-            </Pressable>
-          </View>
-        ) : (
-          <FlatList
-            data={routines}
-            keyExtractor={(item) => item.id}
-            refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadRoutines} />}
-            renderItem={({ item }) => (
-              <RoutineRow routine={item} onPress={() => router.push(`/routine/${item.id}`)} />
-            )}
-          />
-        )
+        <FlatList
+          data={packages}
+          keyExtractor={(item) => item.id}
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadPackages} />}
+          renderItem={({ item }) => (
+            <PackageRow pkg={item} onPress={() => router.push(`/package/${item.id}`)} />
+          )}
+        />
       )}
     </View>
   );
@@ -301,8 +280,6 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText: { fontSize: 11 },
   rowDue: { color: '#888', fontSize: 12 },
-  routineBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  inactiveLabel: { fontSize: 12, color: '#d32f2f' },
   dropdownHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

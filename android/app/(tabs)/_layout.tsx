@@ -1,6 +1,17 @@
-import { Tabs } from 'expo-router';
+import { useEffect } from 'react';
+import { Tabs, useRouter } from 'expo-router';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 export default function TabsLayout() {
+  const { isLoggedIn, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn) {
+      router.replace('/login');
+    }
+  }, [isLoggedIn, isLoading]);
+
   return (
     <Tabs>
       <Tabs.Screen name="index" options={{ title: 'マイタスク' }} />

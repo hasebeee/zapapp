@@ -206,18 +206,25 @@ struct OwnerTaskListView: View {
 
 struct ControllerTaskCardView: View {
     let task: AppTask
+    var ownerName: String? = nil
     let isZapping: Bool
     let isApproving: Bool
     let isDeleting: Bool
     let showNotStartedWarning: Bool
     let onApprove: () -> Void
     let onZap: () -> Void
-    let onDelete: () -> Void
+    var onDelete: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
+                    if let ownerName {
+                        Text(ownerName)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color.accentColor)
+                    }
                     Text(task.title)
                         .font(.body.bold())
                         .lineLimit(2)
@@ -278,7 +285,7 @@ struct ControllerTaskCardView: View {
                 .foregroundStyle(.orange)
             }
 
-            if task.status != .closed && task.status != .waitingAck {
+            if let onDelete, task.status != .closed && task.status != .waitingAck {
                 Button {
                     onDelete()
                 } label: {

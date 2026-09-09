@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import pool from '../db';
-import { AuthRequest, ZapRequestRow, UserRow } from '../types';
+import { AuthRequest, ZapRequestRow, UserRow, PendingJudgmentTaskRow } from '../types';
 
 const router = Router();
 
@@ -148,6 +148,36 @@ router.get('/zap_requests', async (req: AuthRequest, res: Response): Promise<voi
     res.json(result.rows);
   } catch (err) {
     console.error('[GET /me/zap_requests] Error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────────
+// GET /me/pending_judgments  — 監視者として合否判定待ちの全タスク（全オーナー横断）
+// ──────────────────────────────────────────────
+router.get('/pending_judgments', async (req: AuthRequest, res: Response): Promise<void> => {
+  const { userId } = req.user!;
+
+  console.log(`[GET /me/pending_judgments] userId=${userId}`);
+
+  try {
+    const result = await pool.query<PendingJudgmentTaskRow>(
+      `SELECT tasks.*, users.display_name AS owner_display_name
+       FROM tasks
+       JOIN users ON users.id = tasks.owner_user_id
+       JOIN relationships
+         ON relationships.owner_user_id = tasks.owner_user_id
+        AND relationships.controller_user_id = tasks.controller_user_id
+        AND relationships.status = 'active'
+       WHERE tasks.controller_user_id = $1
+         AND tasks.status IN ('readyToZap', 'readyToReZap')
+       ORDER BY tasks.due_at ASC`,
+      [userId]
+    );
+    console.log(`[GET /me/pending_judgments] Returning ${result.rows.length} task(s) for userId=${userId}`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('[GET /me/pending_judgments] Error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

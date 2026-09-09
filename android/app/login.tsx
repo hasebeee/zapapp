@@ -23,7 +23,8 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (isLoggedIn) {
-      router.replace('/(tabs)');
+      // '/' 経由にすることで、起動時と同じ合否判定/パッケージ選択の分岐を通す
+      router.replace('/');
     }
   }, [isLoggedIn]);
 

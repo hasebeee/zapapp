@@ -24,7 +24,7 @@ enum DueDateFilter: String, CaseIterable {
 
 enum HomeTab: String, CaseIterable {
     case tasks    = "タスク"
-    case routines = "ルーティーン"
+    case packages = "パッケージ"
 }
 
 // MARK: - OwnerHomeView
@@ -46,10 +46,10 @@ struct OwnerHomeView: View {
     @State private var selectedDueDateFilter: DueDateFilter = .all
     @State private var showOtherStatuses: Bool = false
 
-    // Routines
-    @State private var routines: [Routine] = []
-    @State private var showCreateRoutine: Bool = false
-    @State private var selectedRoutine: Routine? = nil
+    // Packages
+    @State private var packages: [Package] = []
+    @State private var showCreatePackage: Bool = false
+    @State private var selectedPackage: Package? = nil
 
     private let statusOrder: [TaskStatus] = [.scheduled]
     private let dropdownStatusOrder: [TaskStatus] = [.readyToZap, .readyToReZap, .waitingAck]
@@ -87,7 +87,7 @@ struct OwnerHomeView: View {
                 if activeTab == .tasks {
                     taskContent
                 } else {
-                    routineContent
+                    packageContent
                 }
             }
             .navigationTitle("マイタスク")
@@ -104,7 +104,7 @@ struct OwnerHomeView: View {
                         if activeTab == .tasks {
                             showCreateTask = true
                         } else {
-                            showCreateRoutine = true
+                            showCreatePackage = true
                         }
                     } label: {
                         Image(systemName: "plus")
@@ -123,10 +123,10 @@ struct OwnerHomeView: View {
             }) {
                 CreateTaskView()
             }
-            .sheet(isPresented: $showCreateRoutine, onDismiss: {
-                Task { await loadRoutines() }
+            .sheet(isPresented: $showCreatePackage, onDismiss: {
+                Task { await loadPackages() }
             }) {
-                CreateRoutineView()
+                CreatePackageView()
             }
             .sheet(isPresented: $showInvite) {
                 InviteView()
@@ -136,9 +136,9 @@ struct OwnerHomeView: View {
                     Task { await loadTasks() }
                 })
             }
-            .navigationDestination(item: $selectedRoutine) { routine in
-                RoutineDetailView(routine: routine, onUpdate: {
-                    Task { await loadRoutines() }
+            .navigationDestination(item: $selectedPackage) { pkg in
+                PackageDetailView(package: pkg, onUpdate: {
+                    Task { await loadPackages() }
                 })
             }
             .alert("エラー", isPresented: .constant(errorMessage != nil), actions: {
@@ -326,59 +326,41 @@ struct OwnerHomeView: View {
         }
     }
 
-    // MARK: - Routine Content
+    // MARK: - Package Content
 
     @ViewBuilder
-    private var routineContent: some View {
-        if isLoading && routines.isEmpty {
+    private var packageContent: some View {
+        if isLoading && packages.isEmpty {
             ProgressView("読み込み中...")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if routines.isEmpty {
-            routineEmptyView
+        } else if packages.isEmpty {
+            packageEmptyView
         } else {
-            routineList
+            packageList
         }
     }
 
-    private var routineEmptyView: some View {
+    private var packageEmptyView: some View {
         VStack(spacing: 16) {
-            Image(systemName: "repeat.circle")
+            Image(systemName: "shippingbox")
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
-            Text("ルーティーンがありません")
+            Text("パッケージがありません")
                 .font(.title3)
                 .foregroundStyle(.secondary)
-            Button("ルーティーンを作成") {
-                showCreateRoutine = true
+            Button("パッケージを作成") {
+                showCreatePackage = true
             }
             .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var routineList: some View {
-        List {
-            let active = routines.filter { $0.isActive }
-            let inactive = routines.filter { !$0.isActive }
-
-            if !active.isEmpty {
-                Section("有効") {
-                    ForEach(active) { routine in
-                        RoutineRowView(routine: routine)
-                            .contentShape(Rectangle())
-                            .onTapGesture { selectedRoutine = routine }
-                    }
-                }
-            }
-            if !inactive.isEmpty {
-                Section("停止中") {
-                    ForEach(inactive) { routine in
-                        RoutineRowView(routine: routine)
-                            .contentShape(Rectangle())
-                            .onTapGesture { selectedRoutine = routine }
-                    }
-                }
-            }
+    private var packageList: some View {
+        List(packages) { pkg in
+            PackageRowView(package: pkg)
+                .contentShape(Rectangle())
+                .onTapGesture { selectedPackage = pkg }
         }
         .listStyle(.insetGrouped)
     }
@@ -409,7 +391,7 @@ struct OwnerHomeView: View {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await loadTasks() }
             group.addTask { await loadRelationships() }
-            group.addTask { await loadRoutines() }
+            group.addTask { await loadPackages() }
         }
     }
 
@@ -429,9 +411,9 @@ struct OwnerHomeView: View {
         } catch {}
     }
 
-    private func loadRoutines() async {
+    private func loadPackages() async {
         do {
-            routines = try await APIClient.shared.getRoutines()
+            packages = try await APIClient.shared.getPackages()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -515,50 +497,39 @@ struct TaskRowView: View {
     }
 }
 
-// MARK: - RoutineRowView
+// MARK: - PackageRowView
 
-struct RoutineRowView: View {
-    let routine: Routine
+struct PackageRowView: View {
+    let package: Package
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(routine.title)
+                Text(package.title)
                     .font(.body)
                     .lineLimit(2)
                 Spacer()
-                frequencyBadge
+                itemCountBadge
             }
             HStack {
-                Image(systemName: "repeat")
+                Image(systemName: "clock")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(routine.scheduleLabel())
+                Text(package.timeOfDayLabel)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-            }
-            if let next = routine.nextRunAt {
-                HStack {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("次回: \(next.formatted(date: .abbreviated, time: .shortened))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
         }
         .padding(.vertical, 4)
-        .opacity(routine.isActive ? 1.0 : 0.5)
     }
 
-    private var frequencyBadge: some View {
-        Text(routine.frequency.label)
+    private var itemCountBadge: some View {
+        Text("\(package.items.count)件")
             .font(.caption2)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(routine.isActive ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
-            .foregroundStyle(routine.isActive ? Color.blue : Color.gray)
+            .background(Color.blue.opacity(0.15))
+            .foregroundStyle(Color.blue)
             .clipShape(Capsule())
     }
 }
