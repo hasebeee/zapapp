@@ -390,7 +390,7 @@ final class APIClient {
         var dict: [String: Any] = [:]
         if let title { dict["title"] = title }
         if let items {
-            dict["items"] = items.map { ["title": $0.title, "zap_criteria": $0.zapCriteria ?? NSNull()] }
+            dict["items"] = items.map { ["title": $0.title as Any, "zap_criteria": ($0.zapCriteria as Any?) ?? NSNull()] }
         }
         let data = try JSONSerialization.data(withJSONObject: dict)
         var mutableReq = req

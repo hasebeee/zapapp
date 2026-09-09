@@ -50,7 +50,7 @@ struct PackageDetailView: View {
                 LabeledContent("時刻", value: current.timeOfDayLabel)
             }
 
-            Section(itemsSectionTitle) {
+            Section(header: Text(itemsSectionTitle)) {
                 if isEditing {
                     ForEach($editItems) { $item in
                         VStack(alignment: .leading, spacing: 6) {
