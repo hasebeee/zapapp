@@ -19,30 +19,40 @@ struct JudgeView: View {
     @State private var showZapAlert: Bool = false
     @State private var isZapping: Bool = false
 
+    @State private var isBulkActing: Bool = false
+    @State private var showApproveAllConfirm: Bool = false
+    @State private var showZapAllConfirm: Bool = false
+
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading && tasks.isEmpty {
-                    ProgressView("読み込み中...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List(tasks) { task in
-                        ControllerTaskCardView(
-                            task: task.asAppTask,
-                            ownerName: task.ownerDisplayName,
-                            isZapping: isZapping && taskToZap?.id == task.id,
-                            isApproving: isApproving && taskToApprove?.id == task.id,
-                            isDeleting: false,
-                            showNotStartedWarning: false
-                        ) {
-                            taskToApprove = task
-                            showApproveAlert = true
-                        } onZap: {
-                            taskToZap = task
-                            showZapAlert = true
+            VStack(spacing: 0) {
+                if !tasks.isEmpty {
+                    bulkActionBar
+                }
+
+                Group {
+                    if isLoading && tasks.isEmpty {
+                        ProgressView("読み込み中...")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        List(tasks) { task in
+                            ControllerTaskCardView(
+                                task: task.asAppTask,
+                                ownerName: task.ownerDisplayName,
+                                isZapping: isBulkActing || (isZapping && taskToZap?.id == task.id),
+                                isApproving: isBulkActing || (isApproving && taskToApprove?.id == task.id),
+                                isDeleting: false,
+                                showNotStartedWarning: false
+                            ) {
+                                taskToApprove = task
+                                showApproveAlert = true
+                            } onZap: {
+                                taskToZap = task
+                                showZapAlert = true
+                            }
                         }
+                        .listStyle(.insetGrouped)
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("合否判定")
@@ -77,10 +87,73 @@ struct JudgeView: View {
                     Text("「\(task.title)」に Zap を送信します。\n本当に Zap しますか？")
                 }
             })
+            .confirmationDialog(
+                "表示されている\(tasks.count)件すべてを合格にします。Zapは送信されません。",
+                isPresented: $showApproveAllConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("全部合格にする") {
+                    Task { await approveAll() }
+                }
+                Button("キャンセル", role: .cancel) {}
+            }
+            .confirmationDialog(
+                "表示されている\(tasks.count)件すべてにZapを送信します。本当によろしいですか？",
+                isPresented: $showZapAllConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("全部Zapする", role: .destructive) {
+                    Task { await zapAll() }
+                }
+                Button("キャンセル", role: .cancel) {}
+            }
             .task {
                 await load()
             }
         }
+    }
+
+    private var bulkActionBar: some View {
+        HStack(spacing: 8) {
+            Button {
+                showApproveAllConfirm = true
+            } label: {
+                HStack {
+                    Spacer()
+                    if isBulkActing {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("全部合格にする").fontWeight(.semibold)
+                    }
+                    Spacer()
+                }
+                .frame(height: 36)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .disabled(isBulkActing)
+
+            Button {
+                showZapAllConfirm = true
+            } label: {
+                HStack {
+                    Spacer()
+                    if isBulkActing {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text("全部不合格にする").fontWeight(.semibold)
+                    }
+                    Spacer()
+                }
+                .frame(height: 36)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.red)
+            .disabled(isBulkActing)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(.systemGroupedBackground))
     }
 
     private func load() async {
@@ -122,6 +195,32 @@ struct JudgeView: View {
             errorMessage = error.localizedDescription
         }
         taskToZap = nil
+    }
+
+    private func approveAll() async {
+        isBulkActing = true
+        defer { isBulkActing = false }
+        do {
+            for task in tasks {
+                try await APIClient.shared.approveTask(taskId: task.id)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        await load()
+    }
+
+    private func zapAll() async {
+        isBulkActing = true
+        defer { isBulkActing = false }
+        do {
+            for task in tasks {
+                _ = try await APIClient.shared.sendZap(taskId: task.id)
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        await load()
     }
 }
 

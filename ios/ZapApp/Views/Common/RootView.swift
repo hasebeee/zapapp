@@ -21,7 +21,7 @@ struct RootView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .judge:
-                    JudgeView(onFinished: { gate = .home })
+                    JudgeView(onFinished: { gate = .quickPackage })
                 case .quickPackage:
                     QuickPackageView(onFinished: { gate = .home })
                 case .home:

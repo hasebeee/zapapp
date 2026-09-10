@@ -12,6 +12,7 @@ export default function JudgeScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [actingTaskId, setActingTaskId] = useState<string | null>(null);
   const [actingKind, setActingKind] = useState<'approve' | 'zap' | null>(null);
+  const [bulkActing, setBulkActing] = useState<'approve' | 'zap' | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -20,7 +21,7 @@ export default function JudgeScreen() {
       const result = await APIClient.getPendingJudgments();
       setTasks(result);
       if (result.length === 0) {
-        router.replace('/(tabs)');
+        router.replace('/quick-package');
       }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -75,6 +76,50 @@ export default function JudgeScreen() {
     ]);
   };
 
+  const approveAll = async () => {
+    setBulkActing('approve');
+    setErrorMessage(null);
+    try {
+      for (const task of tasks) {
+        await APIClient.approveTask(task.id);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBulkActing(null);
+      await load();
+    }
+  };
+
+  const zapAll = async () => {
+    setBulkActing('zap');
+    setErrorMessage(null);
+    try {
+      for (const task of tasks) {
+        await APIClient.sendZap(task.id);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBulkActing(null);
+      await load();
+    }
+  };
+
+  const confirmApproveAll = () => {
+    Alert.alert('全部合格にしますか？', `表示されている${tasks.length}件すべてを合格にします。\nZapは送信されません。`, [
+      { text: 'キャンセル', style: 'cancel' },
+      { text: '全部合格にする', onPress: approveAll },
+    ]);
+  };
+
+  const confirmZapAll = () => {
+    Alert.alert('全部Zapしますか？', `表示されている${tasks.length}件すべてにZapを送信します。\n本当によろしいですか？`, [
+      { text: 'キャンセル', style: 'cancel' },
+      { text: '全部Zapする', style: 'destructive', onPress: zapAll },
+    ]);
+  };
+
   if (isLoading && tasks.length === 0) {
     return (
       <View style={styles.centered}>
@@ -83,14 +128,43 @@ export default function JudgeScreen() {
     );
   }
 
+  const isBulkActing = bulkActing !== null;
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>合否判定</Text>
-        <Pressable onPress={() => router.replace('/(tabs)')}>
+        <Pressable onPress={() => router.replace('/quick-package')}>
           <Text style={styles.skip}>あとで</Text>
         </Pressable>
       </View>
+
+      {tasks.length > 0 && (
+        <View style={styles.bulkRow}>
+          <Pressable
+            style={[styles.bulkButton, styles.bulkApprove, isBulkActing && styles.buttonDisabled]}
+            onPress={confirmApproveAll}
+            disabled={isBulkActing}
+          >
+            {bulkActing === 'approve' ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.bulkButtonText}>全部合格にする</Text>
+            )}
+          </Pressable>
+          <Pressable
+            style={[styles.bulkButton, styles.bulkZap, isBulkActing && styles.buttonDisabled]}
+            onPress={confirmZapAll}
+            disabled={isBulkActing}
+          >
+            {bulkActing === 'zap' ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.bulkButtonText}>全部不合格にする</Text>
+            )}
+          </Pressable>
+        </View>
+      )}
 
       {errorMessage && <Text style={styles.error}>{errorMessage}</Text>}
 
@@ -102,8 +176,8 @@ export default function JudgeScreen() {
           <JudgeTaskCard
             task={item}
             ownerName={item.owner_display_name}
-            isZapping={actingTaskId === item.id && actingKind === 'zap'}
-            isApproving={actingTaskId === item.id && actingKind === 'approve'}
+            isZapping={isBulkActing || (actingTaskId === item.id && actingKind === 'zap')}
+            isApproving={isBulkActing || (actingTaskId === item.id && actingKind === 'approve')}
             onApprove={() => confirmApprove(item)}
             onZap={() => confirmZap(item)}
           />
@@ -127,6 +201,26 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 22, fontWeight: '700' },
   skip: { color: '#888', fontSize: 15 },
+  bulkRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5ea',
+  },
+  bulkButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bulkApprove: { backgroundColor: '#2e7d32' },
+  bulkZap: { backgroundColor: '#d32f2f' },
+  buttonDisabled: { opacity: 0.5 },
+  bulkButtonText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   error: { color: '#d32f2f', textAlign: 'center', padding: 8 },
   list: { padding: 12, gap: 12 },
 });
