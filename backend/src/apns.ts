@@ -39,6 +39,7 @@ export interface APNsMessage {
   notification: { title: string; body: string };
   data?: Record<string, unknown>;
   contentAvailable?: boolean;
+  badge?: number;
 }
 
 export async function sendAPNs(message: APNsMessage): Promise<void> {
@@ -53,7 +54,7 @@ export async function sendAPNs(message: APNsMessage): Promise<void> {
       body: message.notification.body,
     },
     sound: 'default',
-    badge: 1,
+    badge: message.badge ?? 0,
   };
   if (message.contentAvailable) {
     aps['content-available'] = 1;

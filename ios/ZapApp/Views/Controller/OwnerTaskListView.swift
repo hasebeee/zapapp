@@ -4,6 +4,8 @@ struct OwnerTaskListView: View {
     let ownerUserId: String
     let ownerName: String
 
+    @EnvironmentObject private var appState: AppState
+
     @State private var tasks: [AppTask] = []
     @State private var isLoading: Bool = false
     @State private var errorMessage: String? = nil
@@ -152,6 +154,11 @@ struct OwnerTaskListView: View {
             tasks = try await APIClient.shared.getOwnerTasks(ownerUserId: ownerUserId)
         } catch {
             errorMessage = error.localizedDescription
+        }
+
+        // このオーナーだけでなく全オーナー横断の件数でアプリアイコンのバッジを同期する
+        if let pending = try? await APIClient.shared.getPendingJudgments() {
+            appState.syncAppIconBadge(count: pending.count)
         }
     }
 

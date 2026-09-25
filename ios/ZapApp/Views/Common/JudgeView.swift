@@ -163,6 +163,7 @@ struct JudgeView: View {
         do {
             tasks = try await APIClient.shared.getPendingJudgments()
             appState.controllerBadgeCount = 0
+            appState.syncAppIconBadge(count: tasks.count)
             if tasks.isEmpty {
                 onFinished()
             }

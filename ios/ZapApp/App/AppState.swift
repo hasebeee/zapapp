@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import FirebaseAuth
 import FirebaseMessaging
 
@@ -117,6 +118,14 @@ final class AppState: ObservableObject {
             throw AppError.notAuthenticated
         }
         return try await user.getIDToken()
+    }
+
+    /// ホーム画面のアプリアイコンのバッジ数を実際の件数に同期する。
+    /// プッシュ通知が届いた時は OS が自動でバッジを更新してくれるが、
+    /// アプリ内で判定を終えた直後など、次のプッシュを待たずに
+    /// 即座に反映したい場合はここから呼ぶ。
+    func syncAppIconBadge(count: Int) {
+        UNUserNotificationCenter.current().setBadgeCount(count)
     }
 }
 

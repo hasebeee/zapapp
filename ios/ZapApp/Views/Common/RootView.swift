@@ -45,6 +45,7 @@ struct RootView: View {
     private func checkLaunchGate() async {
         do {
             let pending = try await APIClient.shared.getPendingJudgments()
+            appState.syncAppIconBadge(count: pending.count)
             gate = pending.isEmpty ? .quickPackage : .judge
         } catch {
             // 取得に失敗してもホームに詰まらせない（quickPackage側に「スキップ」がある）
