@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import * as admin from 'firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
 import pool from '../db';
 import { AuthRequest } from '../types';
 
@@ -18,7 +18,7 @@ export async function authMiddleware(
   const idToken = authHeader.slice(7);
 
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
+    const decoded = await getAuth().verifyIdToken(idToken);
 
     const email = decoded.email ?? '';
     const displayName = decoded.name ?? decoded.email ?? '';

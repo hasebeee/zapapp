@@ -1,14 +1,15 @@
-import * as admin from 'firebase-admin';
+import { Credential } from 'firebase-admin/app';
+import { Message } from 'firebase-admin/messaging';
 
-let _credential: admin.credential.Credential | null = null;
+let _credential: Credential | null = null;
 let _projectId: string | null = null;
 
-export function initFCM(credential: admin.credential.Credential, projectId: string): void {
+export function initFCM(credential: Credential, projectId: string): void {
   _credential = credential;
   _projectId = projectId;
 }
 
-export async function sendMessage(message: admin.messaging.Message): Promise<void> {
+export async function sendMessage(message: Message): Promise<void> {
   if (!_credential || !_projectId) {
     throw new Error('FCM not initialized');
   }

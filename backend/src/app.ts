@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import * as admin from 'firebase-admin';
+import { cert, getApps, initializeApp, Credential, ServiceAccount } from 'firebase-admin/app';
 
 import { authMiddleware } from './middleware/auth';
 import { initAPNs } from './apns';
@@ -22,15 +22,15 @@ dotenv.config();
 // ──────────────────────────────────────────────
 // Firebase Admin SDK 初期化
 // ──────────────────────────────────────────────
-if (!admin.apps.length) {
-  let credential: admin.credential.Credential;
+if (!getApps().length) {
+  let credential: Credential;
 
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
     // base64エンコードされたサービスアカウントJSONを使用（改行問題を回避）
     try {
       const json = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8');
       const serviceAccount = JSON.parse(json);
-      credential = admin.credential.cert(serviceAccount);
+      credential = cert(serviceAccount);
       console.log('[Firebase] Initialized with FIREBASE_SERVICE_ACCOUNT_BASE64, project_id:', serviceAccount.project_id);
     } catch (e) {
       console.error('[Firebase] Failed to parse FIREBASE_SERVICE_ACCOUNT_BASE64:', e);
@@ -44,12 +44,12 @@ if (!admin.apps.length) {
     console.log('[Firebase] projectId:', process.env.FIREBASE_PROJECT_ID);
     console.log('[Firebase] clientEmail:', process.env.FIREBASE_CLIENT_EMAIL);
     console.log('[Firebase] privateKey length:', privateKey?.length ?? 0);
-    credential = admin.credential.cert({
+    credential = cert({
       project_id: process.env.FIREBASE_PROJECT_ID,
       client_email: process.env.FIREBASE_CLIENT_EMAIL,
       private_key: privateKey,
       private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-    } as admin.ServiceAccount);
+    } as ServiceAccount);
     console.log('[Firebase] Initialized with individual env vars');
   }
 
@@ -57,7 +57,7 @@ if (!admin.apps.length) {
     ? JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf-8')).project_id
     : process.env.FIREBASE_PROJECT_ID;
   console.log('[Firebase] Using projectId:', projectId);
-  admin.initializeApp({ credential, projectId });
+  initializeApp({ credential, projectId });
 
   // Android 向けプッシュ通知 (FCM) は同じサービスアカウント認証情報を利用する
   initFCM(credential, projectId);
