@@ -48,6 +48,12 @@
         <string>remote-notification</string>
     </array>
 
+    <!-- 位置情報（「場所でZap」のジオフェンス用） -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>「場所でZap」で、登録した場所を地図で選ぶ・その場所にいるかを確認するために位置情報を使用します。</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>「場所でZap」で、アプリを閉じている間も登録した場所への出入りを検知するために位置情報を使用します。移動経路は保存しません。</string>
+
     <!-- Firebase の自動 Swizzling を無効化（AppDelegate で手動ハンドリングするため） -->
     <key>FirebaseAppDelegateProxyEnabled</key>
     <false/>

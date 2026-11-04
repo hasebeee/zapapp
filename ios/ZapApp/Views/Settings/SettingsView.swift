@@ -76,6 +76,22 @@ struct SettingsView: View {
                     Text("Pavlok連携")
                 }
 
+                // 場所でZap
+                Section {
+                    NavigationLink {
+                        LocationRulesView()
+                    } label: {
+                        HStack {
+                            Image(systemName: "mappin.and.ellipse")
+                            Text("場所でZap")
+                        }
+                    }
+                } header: {
+                    Text("自動Zap")
+                } footer: {
+                    Text("登録した場所に一定時間いると自動でZapされます。")
+                }
+
                 // ログアウト
                 Section {
                     Button(role: .destructive) {

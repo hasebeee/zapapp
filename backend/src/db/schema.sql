@@ -190,3 +190,42 @@ CREATE TABLE IF NOT EXISTS package_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_package_items_package ON package_items(package_id);
+
+-- ──────────────────────────────────────────────
+-- location_rules
+-- 指定の場所に一定時間滞在したら自動でZapする（iOSのジオフェンスで検知）
+-- ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS location_rules (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  owner_user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title           TEXT NOT NULL,
+  latitude        DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude       DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  radius_meters   INTEGER NOT NULL CHECK (radius_meters BETWEEN 100 AND 1000),
+  dwell_minutes   INTEGER NOT NULL CHECK (dwell_minutes BETWEEN 1 AND 720),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_location_rules_owner ON location_rules(owner_user_id);
+
+-- ──────────────────────────────────────────────
+-- location_presences
+-- 1回の滞在（入ってから出るまで）。座標の履歴は保存せず、出入りの時刻のみ記録する
+--   inside      : 滞在中（滞在時間をカウント中）
+--   confirming  : 滞在時間に到達し、端末に現在地を確認中
+--   zapped      : まだ中にいると確認できたのでZap済み
+--   left        : 出た（退出通知 or 確認で外にいた）
+--   unconfirmed : 確認に応答がなかった（離れた扱い）
+-- ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS location_presences (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  rule_id         UUID NOT NULL REFERENCES location_rules(id) ON DELETE CASCADE,
+  owner_user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status          TEXT NOT NULL CHECK (status IN ('inside', 'confirming', 'zapped', 'left', 'unconfirmed')) DEFAULT 'inside',
+  entered_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  check_sent_at   TIMESTAMPTZ,
+  exited_at       TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_location_presences_rule ON location_presences(rule_id);
+CREATE INDEX IF NOT EXISTS idx_location_presences_status ON location_presences(status);

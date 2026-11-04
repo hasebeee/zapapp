@@ -409,4 +409,68 @@ final class APIClient {
         isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return try await perform(req, body: ["due_at": isoFormatter.string(from: dueAt)])
     }
+
+    // MARK: - Location Rule APIs
+
+    func getLocationRules() async throws -> [LocationRule] {
+        let req = try await authorizedRequest(path: "/location_rules")
+        return try await perform(req)
+    }
+
+    func createLocationRule(
+        title: String,
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Int,
+        dwellMinutes: Int
+    ) async throws -> LocationRule {
+        let req = try await authorizedRequest(path: "/location_rules", method: "POST")
+        let body = CreateLocationRuleBody(
+            title: title,
+            latitude: latitude,
+            longitude: longitude,
+            radiusMeters: radiusMeters,
+            dwellMinutes: dwellMinutes
+        )
+        return try await perform(req, body: body)
+    }
+
+    private struct CreateLocationRuleBody: Encodable {
+        let title: String
+        let latitude: Double
+        let longitude: Double
+        let radiusMeters: Int
+        let dwellMinutes: Int
+
+        enum CodingKeys: String, CodingKey {
+            case title
+            case latitude
+            case longitude
+            case radiusMeters = "radius_meters"
+            case dwellMinutes = "dwell_minutes"
+        }
+    }
+
+    func deleteLocationRule(ruleId: String) async throws {
+        let req = try await authorizedRequest(path: "/location_rules/\(ruleId)", method: "DELETE")
+        try await performVoid(req)
+    }
+
+    /// ジオフェンスに入った
+    func enterLocation(ruleId: String) async throws {
+        let req = try await authorizedRequest(path: "/location_rules/\(ruleId)/enter", method: "POST")
+        try await performVoid(req)
+    }
+
+    /// ジオフェンスから出た
+    func exitLocation(ruleId: String) async throws {
+        let req = try await authorizedRequest(path: "/location_rules/\(ruleId)/exit", method: "POST")
+        try await performVoid(req)
+    }
+
+    /// サーバーからの滞在確認に、今その場所にいるかを返す
+    func confirmLocation(ruleId: String, inside: Bool) async throws {
+        let req = try await authorizedRequest(path: "/location_rules/\(ruleId)/confirm", method: "POST")
+        try await performVoid(req, body: ["inside": inside])
+    }
 }

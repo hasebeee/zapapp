@@ -153,3 +153,31 @@ export interface PackageWithItems extends PackageRow {
 export interface PendingJudgmentTaskRow extends TaskRow {
   owner_display_name: string;
 }
+
+export interface LocationRuleRow {
+  id: string;
+  owner_user_id: string;
+  title: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+  dwell_minutes: number;
+  created_at: Date;
+}
+
+export type LocationPresenceStatus =
+  | 'inside'
+  | 'confirming'
+  | 'zapped'
+  | 'left'
+  | 'unconfirmed';
+
+export interface LocationPresenceRow {
+  id: string;
+  rule_id: string;
+  owner_user_id: string;
+  status: LocationPresenceStatus;
+  entered_at: Date;
+  check_sent_at: Date | null;
+  exited_at: Date | null;
+}

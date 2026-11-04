@@ -46,6 +46,9 @@ final class AppState: ObservableObject {
         "task_created", "task_controller_assigned", "ready_to_zap", "ready_to_rezap", "gift_received",
     ]
 
+    /// 「場所でZap」の通知はタスクと関係ないのでタブのバッジに数えない
+    private static let locationPushTypes: Set<String> = ["location_check", "location_zapped"]
+
     // MARK: - Init
 
     init() {
@@ -57,7 +60,9 @@ final class AppState: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 let type = note.userInfo?["type"] as? String ?? ""
-                if Self.controllerPushTypes.contains(type) {
+                if Self.locationPushTypes.contains(type) {
+                    return
+                } else if Self.controllerPushTypes.contains(type) {
                     self.controllerBadgeCount += 1
                 } else {
                     self.ownerBadgeCount += 1
@@ -80,6 +85,8 @@ final class AppState: ObservableObject {
                     if let apnsToken = AppDelegate.storedAPNsToken {
                         try? await APIClient.shared.registerDevice(apnsToken: apnsToken, environment: AppDelegate.storedAPNsEnvironment)
                     }
+                    // 「場所でZap」のジオフェンスをサーバーの登録内容に揃える
+                    await LocationMonitor.shared.syncFromServer()
                 } else {
                     self?.dbUserId = nil
                     self?.pavlokConnected = false
@@ -98,6 +105,9 @@ final class AppState: ObservableObject {
 
     /// サインアウト
     func signOut() {
+        // 認証状態の監視側で解除すると、バックグラウンド起動時にログイン状態の復元が
+        // 遅れただけでもジオフェンスが消えてしまうため、明示的なサインアウト時のみ解除する
+        LocationMonitor.shared.stopAll()
         do {
             try Auth.auth().signOut()
         } catch {

@@ -16,6 +16,7 @@ import meRouter from './routes/me';
 import devicesRouter from './routes/devices';
 import giftsRouter from './routes/gifts';
 import packagesRouter from './routes/packages';
+import locationRulesRouter from './routes/locationRules';
 
 dotenv.config();
 
@@ -107,6 +108,7 @@ app.use('/me', meRouter);
 app.use('/devices', devicesRouter);
 app.use('/gifts', giftsRouter);
 app.use('/packages', packagesRouter);
+app.use('/location_rules', locationRulesRouter);
 
 // 404ハンドラ
 app.use((_req, res) => {

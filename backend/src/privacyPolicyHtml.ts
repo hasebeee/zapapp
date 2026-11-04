@@ -14,7 +14,7 @@ export const privacyPolicyHtml = `<!DOCTYPE html>
 </head>
 <body>
   <h1>プライバシーポリシー</h1>
-  <p class="updated">運営者: Hasebeee Apps（個人開発）/ 最終更新日: 2026年6月22日</p>
+  <p class="updated">運営者: Hasebeee Apps（個人開発）/ 最終更新日: 2026年11月3日</p>
 
   <p>本アプリ「ちゅーぶあぷり」における利用者情報の取り扱いは以下の通りです。</p>
 
@@ -26,6 +26,7 @@ export const privacyPolicyHtml = `<!DOCTYPE html>
     <li>招待先メールアドレス、ギフトメッセージ</li>
     <li>プッシュ通知用のデバイストークン</li>
     <li>Pavlok連携時のアクセストークン（連携時に入力するパスワードは保存しません）</li>
+    <li>「場所でZap」機能で登録した場所（名前・緯度経度・範囲）と、その場所に出入りした時刻（移動経路や現在地の履歴は保存しません）</li>
   </ul>
 
   <h2>利用目的</h2>

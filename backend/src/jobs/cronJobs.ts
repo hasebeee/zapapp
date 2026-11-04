@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import pool from '../db';
 import { sendPush } from '../push';
-import { DeviceRow, TaskRow } from '../types';
+import { DeviceRow, LocationPresenceRow, TaskRow } from '../types';
 
 // ──────────────────────────────────────────────
 // ジョブ1：scheduled → readyToZap（毎分）
@@ -184,6 +184,78 @@ async function sendReminderNotifications(): Promise<void> {
 }
 
 // ──────────────────────────────────────────────
+// ジョブ4：場所の滞在確認（毎分）
+// 滞在時間に到達した inside を confirming にし、端末に現在地の確認を依頼する。
+// 端末から /location_rules/:id/confirm で「まだ中にいる」と返ってきたらZapする
+// ──────────────────────────────────────────────
+async function requestStayConfirmations(): Promise<void> {
+  try {
+    const result = await pool.query<LocationPresenceRow & { title: string; dwell_minutes: number }>(
+      `UPDATE location_presences p
+       SET status = 'confirming', check_sent_at = NOW()
+       FROM location_rules r
+       WHERE p.rule_id = r.id
+         AND p.status = 'inside'
+         AND p.entered_at + r.dwell_minutes * INTERVAL '1 minute' <= NOW()
+       RETURNING p.*, r.title, r.dwell_minutes`
+    );
+
+    if (!result.rowCount || result.rowCount === 0) return;
+
+    console.log(`[cron] Requesting stay confirmation for ${result.rowCount} presence(s)`);
+
+    for (const presence of result.rows) {
+      try {
+        // 位置の確認ができるのは iOS アプリのみ
+        const devicesResult = await pool.query<DeviceRow>(
+          `SELECT * FROM devices WHERE user_id = $1 AND platform = 'ios'`,
+          [presence.owner_user_id]
+        );
+
+        await Promise.all(
+          devicesResult.rows.map((device) =>
+            sendPush(
+              device,
+              {
+                title: `📍 「${presence.title}」に${presence.dwell_minutes}分滞在しています`,
+                body: 'まだその場所にいる場合はZapされます',
+              },
+              { ruleId: presence.rule_id, type: 'location_check' },
+              { contentAvailable: true }
+            ).catch((err) => {
+              console.error(`[cron] Location check push failed for device ${device.id}:`, err);
+            })
+          )
+        );
+      } catch (err) {
+        console.error(`[cron] Location check push error for presence=${presence.id}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('[cron] requestStayConfirmations error:', err);
+  }
+}
+
+// ──────────────────────────────────────────────
+// ジョブ5：滞在確認のタイムアウト（毎分）
+// 確認に3分応答がなければ（電源オフ・機内モードなど）離れた扱いにする
+// ──────────────────────────────────────────────
+async function expireStayConfirmations(): Promise<void> {
+  try {
+    const result = await pool.query(
+      `UPDATE location_presences
+       SET status = 'unconfirmed', exited_at = NOW()
+       WHERE status = 'confirming' AND check_sent_at <= NOW() - INTERVAL '3 minutes'`
+    );
+    if (result.rowCount && result.rowCount > 0) {
+      console.log(`[cron] ${result.rowCount} stay confirmation(s) timed out, treated as left`);
+    }
+  } catch (err) {
+    console.error('[cron] expireStayConfirmations error:', err);
+  }
+}
+
+// ──────────────────────────────────────────────
 // cronジョブ起動
 // ──────────────────────────────────────────────
 export function startCronJobs(): void {
@@ -191,6 +263,8 @@ export function startCronJobs(): void {
     await activateScheduledTasks();
     await expireAckDeadlines();
     await sendReminderNotifications();
+    await expireStayConfirmations();
+    await requestStayConfirmations();
   });
 
   console.log('[cron] Cron jobs started');

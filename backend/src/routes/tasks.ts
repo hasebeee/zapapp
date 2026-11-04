@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import pool from '../db';
 import { sendPush } from '../push';
+import { sendZapSequence } from '../pavlok';
 import { AuthRequest, TaskRow, ZapRequestRow, DeviceRow } from '../types';
 
 const router = Router();
@@ -470,37 +471,7 @@ router.post('/:taskId/zap', async (req: AuthRequest, res: Response): Promise<voi
         console.log(
           `[POST /tasks/:taskId/zap] Sending Pavlok sequence (beep×1 → vibe×3 → zap×1) for owner=${task.owner_user_id}`
         );
-        const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-        const sendStimulus = async (type: 'zap' | 'beep' | 'vibration') => {
-          return fetch('https://api.pavlok.com/api/v5/stimulus/send', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${pavlokToken}`,
-            },
-            body: JSON.stringify({ stimulus: { stimulusType: type, stimulusValue: 100 } }),
-          });
-        };
-
-        // beep × 1
-        await sendStimulus('beep');
-        await sleep(1000);
-
-        // vibration × 3
-        for (let i = 0; i < 3; i++) {
-          await sendStimulus('vibration');
-          await sleep(1000);
-        }
-
-        // zap × 1
-        const zapRes = await sendStimulus('zap');
-        const succeededZaps = zapRes.ok ? 1 : 0;
-        if (!zapRes.ok) {
-          const errText = await zapRes.text();
-          console.warn(
-            `[POST /tasks/:taskId/zap] Pavlok zap failed: ${zapRes.status} ${errText}`
-          );
-        }
+        const succeededZaps = (await sendZapSequence(pavlokToken)) ? 1 : 0;
         console.log(
           `[POST /tasks/:taskId/zap] Pavlok sequence done: zap ${succeededZaps ? 'succeeded' : 'failed'} for owner=${task.owner_user_id}`
         );

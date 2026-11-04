@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // 通知デリゲート設定（タップ検知用）
         UNUserNotificationCenter.current().delegate = self
 
+        // ジオフェンスの出入りでバックグラウンド起動された時にイベントを受け取れるよう、起動直後に生成する
+        _ = LocationMonitor.shared
+
         // 通知権限リクエスト
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error {
@@ -60,6 +63,29 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         print("[AppDelegate] Failed to register for remote notifications: \(error)")
     }
 
+    // MARK: - バックグラウンドでのプッシュ受信（content-available）
+
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        guard let ruleId = Self.locationCheckRuleId(from: userInfo) else {
+            completionHandler(.noData)
+            return
+        }
+        Task {
+            await LocationMonitor.shared.confirmPresence(ruleId: ruleId)
+            completionHandler(.newData)
+        }
+    }
+
+    /// 「場所でZap」の滞在確認プッシュなら対象のルールIDを返す
+    static func locationCheckRuleId(from userInfo: [AnyHashable: Any]) -> String? {
+        guard userInfo["type"] as? String == "location_check" else { return nil }
+        return userInfo["ruleId"] as? String
+    }
+
     // MARK: - APNs Environment Detection
 
     /// embedded.mobileprovision の aps-environment を読んで sandbox/production を判定する
@@ -98,6 +124,11 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
         print("[AppDelegate] Notification tapped: \(userInfo)")
+        // バックグラウンドで起こされずに確認できなかった場合に備え、タップ時にも確認する
+        // （既に確認済みならサーバー側で無視される）
+        if let ruleId = Self.locationCheckRuleId(from: userInfo) {
+            Task { await LocationMonitor.shared.confirmPresence(ruleId: ruleId) }
+        }
         NotificationCenter.default.post(name: .pushNotificationReceived, object: nil, userInfo: userInfo)
         completionHandler()
     }
