@@ -34,6 +34,11 @@ final class LocationMonitor: NSObject {
         manager.authorizationStatus
     }
 
+    /// OS がキャッシュしている直近の現在地（取得済みでなければ nil）
+    var lastKnownLocation: CLLocation? {
+        manager.location
+    }
+
     /// 「常に許可」をリクエストする（アプリを閉じていても出入りを検知するため）
     func requestAlwaysAuthorization() {
         manager.requestAlwaysAuthorization()
