@@ -16,8 +16,8 @@ struct AddLocationRuleView: View {
 
     private static let radiusOptions = [100, 150, 200, 300, 500, 1000]
 
-    /// 現在地がまだ取れていない時に表示する場所（東京駅）
-    private static let defaultCoordinate = CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125)
+    /// 現在地がまだ取れていない時に表示する場所（愛知県刈谷市・刈谷駅）
+    private static let defaultCoordinate = CLLocationCoordinate2D(latitude: 34.989722, longitude: 137.004167)
 
     init() {
         // 初期位置は必ず具体的な座標にする。
